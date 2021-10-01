@@ -1,6 +1,6 @@
 [jobs.lexer]
 
-image = { source = "dockerfile", path = "./01_wordAnalysis", tag = "xts" }
+image = { source = "dockerfile", path = ".", tag = "xts" }
 
 run = [
   "java WordAnalyze $input",
