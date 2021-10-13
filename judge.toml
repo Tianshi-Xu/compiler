@@ -3,5 +3,5 @@
 image = { source = "dockerfile", path = ".", tag = "xts" }
 
 run = [
-  "java WordAnalyze $input",
+  "java FaAnalyze $input",
 ]

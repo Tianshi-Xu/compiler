@@ -1,4 +1,5 @@
 FROM openjdk:8
 WORKDIR /app/
-COPY ./01_wordAnalysis/* ./
-RUN javac WordAnalyze.java
+COPY ./lab01/* ./
+RUN javac FaAnalyze.java Tokens.java WordAnalyze.java 
+
