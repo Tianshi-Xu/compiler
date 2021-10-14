@@ -13,7 +13,6 @@ public class FaAnalyze {
     private int idx_t=0;
     private int idx_n=0;
     public void analyze(String path) throws Exception {
-        out.print("KKK");
         wordAnalyze.readFile(path);
         wordAnalyze.analyze();
         tokens = wordAnalyze.getTokens();
@@ -33,58 +32,64 @@ public class FaAnalyze {
             error();
         }
         result.append('(');
-        System.out.print("(");
+//        System.out.print("(");
         getSym();
         if(token!=Tokens.RPar){
             error();
         }
         result.append(") ");
-        System.out.print(") ");
+//        System.out.print(") ");
         getSym();
         Block();
         if(idx_t!=tokens.size()){
             error();
         }
+        out.print(1);
     }
     public void FuncType(){
         if(token!=Tokens.INT){
             error();
         }
-        System.out.print("define dso_local i32 ");
+        result.append("define dso_local i32 ");
+//        System.out.print("define dso_local i32 ");
         getSym();
     }
     public void Ident(){
         if(token!=Tokens.MAIN){
             error();
         }
-        System.out.print("@main");
+        result.append("@main");
+//        System.out.print("@main");
         getSym();
     }
     public void Block(){
         if(token!=Tokens.LBrace){
             error();
         }
-        System.out.print("{ ");
+        result.append("{ ");
+//        System.out.print("{ ");
         getSym();
 
         Stmt();
         if(token!=Tokens.RBrace){
             error();
         }
-        System.out.print(" }");
+        result.append(" }");
+//        System.out.print(" }");
     }
     public void Stmt(){
         if(token!=Tokens.RETURN){
             error();
         }
-        System.out.print("ret ");
+        result.append("ret ");
+//        System.out.print("ret ");
         getSym();
 
         if(token!=Tokens.NUMBER){
             error();
         }
-
-        System.out.print("i32 "+numbers.get(idx_n++));
+        result.append("i32 ").append(numbers.get(idx_n++));
+//        System.out.print("i32 "+numbers.get(idx_n++));
         getSym();
         if(token!=Tokens.Semicolon){
             error();
