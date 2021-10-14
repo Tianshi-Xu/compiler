@@ -111,9 +111,10 @@ public class WordAnalyze {
                 else if(isDigit(ch))
                 {
                     if(ch == '0'){
-                        if(i+1<chars.length()){
-                            if(chars.charAt(i+1)=='x'||chars.charAt(i+1)=='X'){
-                                i+=2;
+                        i++;
+                        if(i<chars.length()){
+                            if(chars.charAt(i)=='x'||chars.charAt(i)=='X'){
+                                i++;
                                 ch = chars.charAt(i);
                                 while(isDigit16(ch))
                                 {
@@ -122,10 +123,9 @@ public class WordAnalyze {
                                 }
                                 tokens.add(Tokens.NUMBER);
                                 numbers.add(Integer.parseInt(String.valueOf(arr), 16));
-                                i--;
                             }
                             else {
-                                arr.append(ch);
+                                arr.append(chars.charAt(i));
                                 i++;
                                 ch = chars.charAt(i);
                                 while(isDigit8(ch))
@@ -135,8 +135,8 @@ public class WordAnalyze {
                                 }
                                 tokens.add(Tokens.NUMBER);
                                 numbers.add(Integer.parseInt(String.valueOf(arr), 8));
-                                i--;
                             }
+                            i--;
                         }
                         else {
                             tokens.add(Tokens.NUMBER);
