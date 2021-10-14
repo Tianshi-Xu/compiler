@@ -48,6 +48,7 @@ public class FaAnalyze {
         }
         System.out.print("{");
         getSym();
+
         Stmt();
         if(token!=Tokens.RBrace){
             error();
@@ -60,9 +61,11 @@ public class FaAnalyze {
         }
         System.out.print("ret");
         getSym();
+
         if(token!=Tokens.NUMBER){
             error();
         }
+
         System.out.print("i32 "+number);
         getSym();
         if(token!=Tokens.Semicolon){

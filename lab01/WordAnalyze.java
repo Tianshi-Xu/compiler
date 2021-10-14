@@ -62,6 +62,31 @@ public class WordAnalyze {
             System.out.print(ch);
             ch = chars[++i];
         }
+        if(ch=='/'){
+            if(chars[i+1]=='/'){
+                i++;
+                while (chars[++i] != '\n');
+            }
+            else if(chars[i+1]=='*'){
+                i+=2;
+                while (i<chars.length&&chars[i]!='*'){
+                    i++;
+                }
+                i++;
+                if(i>= chars.length||chars[i]!='/'){
+                    return 1;
+                }
+                i++;
+            }
+            else {
+                return 1;
+            }
+        }
+        ch=chars[i];
+        while (ch == ' '||ch == '\t'||ch == '\n'||ch == '\r'){
+            System.out.print(ch);
+            ch = chars[++i];
+        }
         if(isLetter(ch)){
             while(isLetter(ch)){
                 arr.append(ch);
