@@ -13,7 +13,7 @@ public class FaAnalyze {
     private int idx_t=0;
     private int idx_n=0;
     public void analyze(String path) throws Exception {
-        error();
+        out.print("OKKK");
         wordAnalyze.readFile(path);
         wordAnalyze.analyze();
         tokens = wordAnalyze.getTokens();
