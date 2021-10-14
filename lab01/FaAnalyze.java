@@ -27,6 +27,9 @@ public class FaAnalyze {
         System.out.print(")");
         getSym();
         Block();
+        if (!isOver()){
+            error();
+        }
     }
     public void FuncType(){
         if(token!=Tokens.INT){
@@ -83,6 +86,10 @@ public class FaAnalyze {
         }
         token = wordAnalyze.getTokens();
         number = wordAnalyze.getNumbers();
+    }
+    public boolean isOver(){
+        int a = wordAnalyze.analyze();
+        return a==-1;
     }
     public static void main(String[] args) throws Exception {
         FaAnalyze faAnalyze = new FaAnalyze();
