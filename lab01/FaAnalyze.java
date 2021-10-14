@@ -108,8 +108,8 @@ public class FaAnalyze {
         FaAnalyze faAnalyze = new FaAnalyze();
         faAnalyze.analyze(args[0]);
         out.print(args[0]);
-        BufferedWriter out = new BufferedWriter(new FileWriter(args[1]));
-        out.write(String.valueOf(faAnalyze.result));
-        out.close();
+//        BufferedWriter out = new BufferedWriter(new FileWriter(args[1]));
+//        out.write(String.valueOf(faAnalyze.result));
+//        out.close();
     }
 }
