@@ -9,9 +9,11 @@ public class FaAnalyze {
     private ArrayList<Tokens> tokens;
     private ArrayList<Integer> numbers;
     private Tokens token;
+    private StringBuilder result = new StringBuilder();
     private int idx_t=0;
     private int idx_n=0;
     public void analyze(String path) throws Exception {
+        error();
         wordAnalyze.readFile(path);
         wordAnalyze.analyze();
         tokens = wordAnalyze.getTokens();
@@ -30,11 +32,13 @@ public class FaAnalyze {
         if(token!=Tokens.LPar){
             error();
         }
+        result.append('(');
         System.out.print("(");
         getSym();
         if(token!=Tokens.RPar){
             error();
         }
+        result.append(") ");
         System.out.print(") ");
         getSym();
         Block();
