@@ -6,11 +6,22 @@ import static java.lang.System.*;
 
 public class FaAnalyze {
     private WordAnalyze wordAnalyze = new WordAnalyze();
+    private ArrayList<Tokens> tokens;
+    private ArrayList<Integer> numbers;
     private Tokens token;
-    private Integer number;
+    private int idx_t=0;
+    private int idx_n=0;
     public void analyze(String path) throws Exception {
         wordAnalyze.readFile(path);
-        FuncDef();
+        wordAnalyze.analyze();
+        tokens = wordAnalyze.getTokens();
+        numbers = wordAnalyze.getNumbers();
+        try {
+            FuncDef();
+        }
+        catch (Exception e){
+            error();
+        }
     }
     public void FuncDef(){
         getSym();
@@ -24,10 +35,10 @@ public class FaAnalyze {
         if(token!=Tokens.RPar){
             error();
         }
-        System.out.print(")");
+        System.out.print(") ");
         getSym();
         Block();
-        if (!isOver()){
+        if(idx_t!=tokens.size()){
             error();
         }
     }
@@ -35,7 +46,7 @@ public class FaAnalyze {
         if(token!=Tokens.INT){
             error();
         }
-        System.out.print("define dso_local i32");
+        System.out.print("define dso_local i32 ");
         getSym();
     }
     public void Ident(){
@@ -49,14 +60,14 @@ public class FaAnalyze {
         if(token!=Tokens.LBrace){
             error();
         }
-        System.out.print("{");
+        System.out.print("{ ");
         getSym();
 
         Stmt();
         if(token!=Tokens.RBrace){
             error();
         }
-        System.out.print("}");
+        System.out.print(" }");
     }
     public void Stmt(){
         if(token!=Tokens.RETURN){
@@ -69,7 +80,7 @@ public class FaAnalyze {
             error();
         }
 
-        System.out.print("i32 "+number);
+        System.out.print("i32 "+numbers.get(idx_n++));
         getSym();
         if(token!=Tokens.Semicolon){
             error();
@@ -80,16 +91,8 @@ public class FaAnalyze {
         exit(1);
     }
     public void getSym(){
-        int a = wordAnalyze.analyze();
-        if(a!=0){
-            error();
-        }
-        token = wordAnalyze.getTokens();
-        number = wordAnalyze.getNumbers();
-    }
-    public boolean isOver(){
-        int a = wordAnalyze.analyze();
-        return a==-1;
+        token = tokens.get(idx_t++);
+
     }
     public static void main(String[] args) throws Exception {
         FaAnalyze faAnalyze = new FaAnalyze();
