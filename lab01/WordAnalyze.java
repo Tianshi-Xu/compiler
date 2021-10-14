@@ -73,14 +73,18 @@ public class WordAnalyze {
                     }
                     else if(chars.charAt(i)=='*'){
                         i++;
-                        while (i<chars.length()&&chars.charAt(i)!='*'){
+                        while (true){
+                            while (i<chars.length()&&chars.charAt(i)!='*'){
+                                i++;
+                            }
                             i++;
+                            if(i>= chars.length()){
+                                error();
+                            }
+                            else if(chars.charAt(i)=='/'){
+                                break;
+                            }
                         }
-                        i++;
-                        if(i>= chars.length()||chars.charAt(i)!='/'){
-                            error();
-                        }
-                        i++;
                     }
                     else {
                         error();
