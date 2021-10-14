@@ -1,4 +1,6 @@
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
@@ -44,7 +46,6 @@ public class FaAnalyze {
         if(idx_t!=tokens.size()){
             error();
         }
-        out.print(1);
     }
     public void FuncType(){
         if(token!=Tokens.INT){
@@ -106,5 +107,8 @@ public class FaAnalyze {
     public static void main(String[] args) throws Exception {
         FaAnalyze faAnalyze = new FaAnalyze();
         faAnalyze.analyze(args[0]);
+        BufferedWriter out = new BufferedWriter(new FileWriter(args[1]));
+        out.write(String.valueOf(faAnalyze.result));
+        out.close();
     }
 }
