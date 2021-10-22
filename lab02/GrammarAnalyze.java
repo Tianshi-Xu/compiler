@@ -256,6 +256,8 @@ public class GrammarAnalyze {
                 }
                 break;
             }
+            default:
+                error();
         }
     }
 
