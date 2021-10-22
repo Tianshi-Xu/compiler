@@ -15,13 +15,13 @@ public class WordAnalyze {
     private ArrayList<Tokens> tokens = new ArrayList<>();
     private ArrayList<Integer> numbers = new ArrayList<>();
     private String keyWord[] = {"int","return","main"};
-    private HashMap<Integer, Tokens> keyWordMap = new HashMap<>();
+    private ArrayList<Tokens> keyWordList = new ArrayList<>();
     private char ch;
     private StringBuilder chars = new StringBuilder();
     public WordAnalyze(){
-        keyWordMap.put(0,Tokens.INT);
-        keyWordMap.put(1,Tokens.RETURN);
-        keyWordMap.put(2,Tokens.MAIN);
+        keyWordList.add(Tokens.INT);
+        keyWordList.add(Tokens.RETURN);
+        keyWordList.add(Tokens.MAIN);
     }
     //判断是否是字母
     boolean isLetter(char letter)
@@ -87,7 +87,7 @@ public class WordAnalyze {
                         }
                     }
                     else {
-                        error();
+                        tokens.add(Tokens.Div);
                     }
                 }
                 else if(isLetter(ch)){
@@ -102,7 +102,7 @@ public class WordAnalyze {
                     for (int j=0;j<keyWord.length;j++) {
                         if (keyWord[j].equals(arr.toString())){
                             //关键字
-                            tokens.add(keyWordMap.get(j));
+                            tokens.add(keyWordList.get(j));
                             flag=0;
                             break;
                         }
@@ -166,6 +166,32 @@ public class WordAnalyze {
                         case ';':tokens.add(Tokens.Semicolon);break;
                         case '{':tokens.add(Tokens.LBrace);break;
                         case '}':tokens.add(Tokens.RBrace);break;
+                        case '+':{
+                            if (tokens.isEmpty()){
+                                error();
+                            }
+                            else if (tokens.get(tokens.size()-1)==Tokens.NUMBER||tokens.get(tokens.size()-1)==Tokens.RPar){
+                                tokens.add(Tokens.BinAdd);
+                            }
+                            else {
+                                tokens.add(Tokens.UnaryOpAdd);
+                            }
+                            break;
+                        }
+                        case '-':{
+                            if (tokens.isEmpty()){
+                                error();
+                            }
+                            else if (tokens.get(tokens.size()-1)==Tokens.NUMBER||tokens.get(tokens.size()-1)==Tokens.RPar){
+                                tokens.add(Tokens.BinDec);
+                            }
+                            else {
+                                tokens.add(Tokens.UnaryOpDec);
+                            }
+                            break;
+                        }
+                        case '*':tokens.add(Tokens.Mul);break;
+                        case '%':tokens.add(Tokens.Mod);break;
                         default: {
                             error();
                         }
@@ -192,9 +218,6 @@ public class WordAnalyze {
         return keyWord;
     }
 
-    public HashMap<Integer, Tokens> getKeyWordMap() {
-        return keyWordMap;
-    }
 
     public char getCh() {
         return ch;
