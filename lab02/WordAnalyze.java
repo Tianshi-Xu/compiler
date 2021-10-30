@@ -14,14 +14,16 @@ import static java.lang.System.exit;
 public class WordAnalyze {
     private ArrayList<Tokens> tokens = new ArrayList<>();
     private ArrayList<Integer> numbers = new ArrayList<>();
-    private String keyWord[] = {"int","return","main"};
+    private String keyWord[] = {"int","return","main","const"};
     private ArrayList<Tokens> keyWordList = new ArrayList<>();
+    private ArrayList<String> identList = new ArrayList<>();
     private char ch;
     private StringBuilder chars = new StringBuilder();
     public WordAnalyze(){
         keyWordList.add(Tokens.INT);
         keyWordList.add(Tokens.RETURN);
         keyWordList.add(Tokens.MAIN);
+        keyWordList.add(Tokens.CONST);
     }
     //判断是否是字母
     boolean isLetter(char letter)
@@ -90,8 +92,8 @@ public class WordAnalyze {
                         tokens.add(Tokens.Div);
                     }
                 }
-                else if(isLetter(ch)){
-                    while(isLetter(ch)){
+                else if(isLetter(ch)||ch=='_'){
+                    while(isLetter(ch)||isDigit(ch)||ch=='_'){
                         arr.append(ch);
                         i++;
                         ch = chars.charAt(i);
@@ -109,7 +111,8 @@ public class WordAnalyze {
                     }
                     if(flag==1){
                         //标识符
-                        error();
+                        tokens.add(Tokens.Ident);
+                        identList.add(String.valueOf(arr));
                     }
                 }
                 else if(isDigit(ch))
@@ -192,6 +195,7 @@ public class WordAnalyze {
                         }
                         case '*':tokens.add(Tokens.Mul);break;
                         case '%':tokens.add(Tokens.Mod);break;
+                        case '=':tokens.add(Tokens.Equal);break;
                         default: {
                             error();
                         }
