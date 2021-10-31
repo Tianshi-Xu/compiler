@@ -40,7 +40,9 @@ public class GrammarAnalyze {
         wordAnalyze.readFile(path);
         wordAnalyze.analyze();
         tokens = wordAnalyze.getTokens();
-
+        for (TokenTrap i : tokens){
+            out.println(i.getToken());
+        }
         try {
             FuncDef();
         }
@@ -508,7 +510,7 @@ public class GrammarAnalyze {
         GrammarAnalyze grammarAnalyze = new GrammarAnalyze();
         grammarAnalyze.analyze(args[0]);
         BufferedWriter out = new BufferedWriter(new FileWriter(args[1]));
-        System.out.println(String.valueOf(grammarAnalyze.result));
+//        System.out.println(String.valueOf(grammarAnalyze.result));
         out.write(String.valueOf(grammarAnalyze.result));
         out.close();
     }
