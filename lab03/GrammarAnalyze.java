@@ -17,7 +17,7 @@ public class GrammarAnalyze {
     private final HashMap<String,Integer> consts;
     private TokenTrap tokenTrap;
     private Tokens token;
-    private StringBuilder result = new StringBuilder();
+    private StringBuffer result = new StringBuffer();
     private int idx_t=0;
     private int numExp=10;
     private int register=1;
@@ -535,7 +535,7 @@ public class GrammarAnalyze {
                     }
                     else{
                         x1 = getNumString(tmp1);
-                        result.append("%").append(register).append(" = ").append("sub").append("i32 0, ").append(x1);
+                        result.append("%").append(register).append(" = ").append("sub ").append("i32 0, ").append(x1).append("\n");
                         Var tmp_var = new Var();
                         tmp_var.setLoad_register(register);
                         stackNum.push(new StackNumEle(false,tmp_var));
@@ -698,10 +698,9 @@ public class GrammarAnalyze {
     }
     //中间代码生成系列：为寄存器store一个新的值
     private void storeRegister(Var var,StackNumEle tmp2){
-        result.append("store i32").append(" ");
+
         String x = getNumString(tmp2);
-        result.append(x);
-        result.append(", ").append(var.getType()).append("* %").append(var.getTrue_register()).append("\n");
+        result.append("store i32 ").append(x).append(", ").append(var.getType()).append("* %").append(var.getTrue_register()).append("\n");
     }
 
     public void error(){
