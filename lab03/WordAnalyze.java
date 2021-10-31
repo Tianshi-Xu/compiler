@@ -2,8 +2,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static java.lang.System.err;
-import static java.lang.System.exit;
+import static java.lang.System.*;
 
 /**
  * 此程序是通过将文件的字符读取到字符数组中去，然后遍历数组，将读取的字符进行
@@ -13,7 +12,7 @@ import static java.lang.System.exit;
  */
 public class WordAnalyze {
     private final ArrayList<TokenTrap> tokens = new ArrayList<>();
-    private final String[] keyWord = {"int","return","main","const"};
+    private final String[] keyWord = {"int","return","main","const","getint","getch","putint","putch"};
     private final ArrayList<Tokens> keyWordList = new ArrayList<>();
     private char ch;
     private final StringBuilder chars = new StringBuilder();
@@ -22,6 +21,10 @@ public class WordAnalyze {
         keyWordList.add(Tokens.RETURN);
         keyWordList.add(Tokens.MAIN);
         keyWordList.add(Tokens.CONST);
+        keyWordList.add(Tokens.Getint);
+        keyWordList.add(Tokens.Getch);
+        keyWordList.add(Tokens.Putint);
+        keyWordList.add(Tokens.Putch);
     }
     //判断是否是字母
     boolean isLetter(char letter)
@@ -53,7 +56,8 @@ public class WordAnalyze {
                 chars.append((char)tempchar);
             }
         }
-        System.out.println(chars);
+        //搞一手评测数据
+//        System.out.println(chars);
         reader.close();
     }
     //词法分析
@@ -89,6 +93,7 @@ public class WordAnalyze {
                     }
                     else {
                         tokens.add(new TokenTrap(Tokens.Div));
+                        i--;
                     }
                 }
                 else if(isLetter(ch)||ch=='_'){
@@ -111,38 +116,36 @@ public class WordAnalyze {
                     if(flag==1){
                         //标识符
                         tokens.add(new TokenTrap(Tokens.Ident,String.valueOf(arr)));
+//                        out.println(arr);
                     }
                 }
                 else if(isDigit(ch))
                 {
                     if(ch == '0'){
                         i++;
-                        if(i<chars.length()){
-                            if(chars.charAt(i)=='x'||chars.charAt(i)=='X'){
-                                i++;
-                                ch = chars.charAt(i);
-                                while(isDigit16(ch))
-                                {
-                                    arr.append(ch);
-                                    ch = chars.charAt(++i);
-                                }
-                                tokens.add(new TokenTrap(Tokens.NUMBER,Integer.valueOf(String.valueOf(arr), 16)));
+                        if(chars.charAt(i)=='x'||chars.charAt(i)=='X'){
+                            i++;
+                            ch = chars.charAt(i);
+                            while(isDigit16(ch))
+                            {
+                                arr.append(ch);
+                                ch = chars.charAt(++i);
                             }
-                            else {
-                                arr.append(chars.charAt(i));
-                                i++;
-                                ch = chars.charAt(i);
-                                while(isDigit8(ch))
-                                {
-                                    arr.append(ch);
-                                    ch = chars.charAt(++i);
-                                }
-                                tokens.add(new TokenTrap(Tokens.NUMBER,Integer.valueOf(String.valueOf(arr), 8)));
-                            }
-                            i--;
+                            tokens.add(new TokenTrap(Tokens.NUMBER,Integer.valueOf(String.valueOf(arr), 16)));
+                        }
+                        else if(!isDigit(chars.charAt(i))){
+                            tokens.add(new TokenTrap(Tokens.NUMBER,0));
                         }
                         else {
-                            tokens.add(new TokenTrap(Tokens.NUMBER,0));
+                            arr.append(chars.charAt(i));
+                            i++;
+                            ch = chars.charAt(i);
+                            while(isDigit8(ch))
+                            {
+                                arr.append(ch);
+                                ch = chars.charAt(++i);
+                            }
+                            tokens.add(new TokenTrap(Tokens.NUMBER,Integer.valueOf(String.valueOf(arr), 8)));
                         }
                     }
                     else {
@@ -152,8 +155,8 @@ public class WordAnalyze {
                             ch = chars.charAt(++i);
                         }
                         tokens.add(new TokenTrap(Tokens.NUMBER,Integer.parseInt(String.valueOf(arr), 10)));
-                        i--;
                     }
+                    i--;
                     //属于无符号常数
                 }
                 else switch(ch){

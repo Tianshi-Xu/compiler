@@ -2,6 +2,8 @@ package com.cai.math;
 
 import java.util.Stack;
 
+import static java.lang.System.out;
+
 /**
  * 目标：java实现直接算出中缀表达式：例：3+2*5-6的值
  * 思路：1.分别把数字，和符号放入两个栈中
@@ -12,8 +14,20 @@ import java.util.Stack;
  *      5.知道数字栈中只有一个值（或者符号栈为空）结束，取出数字栈的当前值为最终结果
  */
 public class Test {
+    public void fun(){
+        int count=1;
+        out.println("EXP-----------");
+        int a=1;
+        if(a==1){
+            count=count+1;
+        }
+        else if(a==2){
+            count=count-1;
+        }
+        System.out.println(count);
+    }
     public static void main(String[] args) {
-        int a = 1 + -+(- - - - - - - - -1);
-        System.out.print(a);
+        Test test = new Test();
+        test.fun();
     }
 }

@@ -40,6 +40,7 @@ public class GrammarAnalyze {
         wordAnalyze.readFile(path);
         wordAnalyze.analyze();
         tokens = wordAnalyze.getTokens();
+        result.append("declare i32 @getint()\n" +"declare void @putint(i32)\n"+"declare i32 @getch()\n" +"declare void @putch(i32)\n");
         try {
             FuncDef();
         }
@@ -55,13 +56,13 @@ public class GrammarAnalyze {
             error();
         }
         result.append('(');
-////        System.out.print("(");
+//////        System.out.print("(");
         getSym();
         if(token!=Tokens.RPar){
             error();
         }
         result.append(") ");
-////        System.out.print(") ");
+//////        System.out.print(") ");
         getSym();
         Block();
         if(idx_t!=tokens.size()){
@@ -94,11 +95,11 @@ public class GrammarAnalyze {
         while (token!=Tokens.RBrace){
             BlockItem();
         }
-//        out.println("OK2");
+////        out.println("OK2");
         result.append("\n}");
     }
     public TokenTrap Ident(){
-        TokenTrap tmp = tokenTrap;
+        TokenTrap tmp = new TokenTrap(tokenTrap);
         if(token!=Tokens.Ident){
             error();
         }
@@ -118,7 +119,7 @@ public class GrammarAnalyze {
         if(token==Tokens.RETURN){
             getSym();
             if(isExp()){
-                StackNumEle tmp = Exp();
+                StackNumEle tmp = Exp(0);
                 if(token!=Tokens.Semicolon){
                     error();
                 }
@@ -138,14 +139,14 @@ public class GrammarAnalyze {
                     error();
                 }
                 getSym();
-                StackNumEle tmp2 = Exp();
+                StackNumEle tmp2 = Exp(0);
                 storeRegister(var,tmp2);
                 if (var.getLoad_register()!=-1){
                     loadRegister(var);
                 }
             }
             else{
-                Exp();
+                Exp(0);
             }
             if(token!=Tokens.Semicolon){
                 error();
@@ -154,7 +155,7 @@ public class GrammarAnalyze {
         }
         //注意EXP可有可无
         else if(isExp()){
-            Exp();
+            Exp(0);
             if(token!=Tokens.Semicolon){
                 error();
             }
@@ -175,6 +176,7 @@ public class GrammarAnalyze {
         else if(token!=Tokens.Equal){
             error();
         }
+
         getSym();
         StackNumEle tmp2 = ConstInitVal();
         consts.put(tmp1.getIdentName(), tmp2.getNumber());
@@ -183,7 +185,6 @@ public class GrammarAnalyze {
         getSym();
         BType();
         ConstDef();
-//        out.println("OK5");
         //0或多次
         while (token==Tokens.Comma){
             getSym();
@@ -195,7 +196,7 @@ public class GrammarAnalyze {
         getSym();
     }
     public StackNumEle InitVal(){
-        return Exp();
+        return Exp(0);
     }
     public void VarDef(){
         TokenTrap tmp1 = Ident();
@@ -211,14 +212,14 @@ public class GrammarAnalyze {
         if(token==Tokens.Equal){
             getSym();
             StackNumEle tmp2 = InitVal();
-//            out.println("OK4");
+////            out.println("OK4");
             //给变量赋值
             storeRegister(tmp_var,tmp2);
         }
     }
     public void VarDecl(){
         BType();
-//        out.println("---");
+////        out.println("---");
         VarDef();
         //0次或多次
 
@@ -235,13 +236,13 @@ public class GrammarAnalyze {
     public void BlockItem(){
 
         if(token==Tokens.CONST){
-////            out.println("OK0");
+//////            out.println("OK0");
             ConstDecl();
         }
         else if(token==Tokens.INT){
-////            out.println("OK2");
+//////            out.println("OK2");
             VarDecl();
-//            out.println("OK3");
+////            out.println("OK3");
         }
         else {
             Stmt();
@@ -249,16 +250,95 @@ public class GrammarAnalyze {
 
     }
     public boolean isExp(){
-        return token == Tokens.LPar || token == Tokens.UnaryOpAdd || token == Tokens.UnaryOpDec || token == Tokens.NUMBER || token == Tokens.Ident;
+        return token == Tokens.LPar || token == Tokens.UnaryOpAdd || token == Tokens.UnaryOpDec || token == Tokens.NUMBER || token == Tokens.Ident||isFunc();
     }
-    public StackNumEle Exp(){
-//        out.println("-----------");
+    public boolean isFunc(){
+        return token==Tokens.Getch||token==Tokens.Getint||token==Tokens.Putch||token==Tokens.Putint;
+    }
+    public int handleFunc(){
+        Tokens tmp_token = token;
+        StringBuilder param = new StringBuilder();
+        getSym();
+        if(token!=Tokens.LPar){
+            error();
+        }
+        getSym();
+        if(tmp_token==Tokens.Getch||tmp_token==Tokens.Getint){
+            if(token!=Tokens.RPar){
+                error();
+            }
+        }
+        else if(tmp_token==Tokens.Putch||tmp_token==Tokens.Putint){
+            if(token==Tokens.RPar){
+                error();
+            }
+            else {
+                StackNumEle par = Exp(1);
+                param.append("i32 ").append(getNumString(par));
+            }
+        }
+        while (token!=Tokens.RPar){
+            error();
+            if(token!=Tokens.Semicolon){
+                error();
+            }
+            else {
+                StackNumEle par = Exp(1);
+                param.append(", i32 ").append(getNumString(par));
+            }
+        }
+        switch (tmp_token){
+            case Getint:{
+                result.append("%").append(register).append(" = call i32 @getint(").append(param).append(")").append("\n");
+                Var tmp_var = new Var();
+                tmp_var.setLoad_register(register);
+                stackNum.push(new StackNumEle(false,tmp_var));
+                register++;
+                return 0;
+            }
+            case Getch:{
+                result.append("%").append(register).append(" = call i32 @getch(").append(param).append(")").append("\n");
+                Var tmp_var = new Var();
+                tmp_var.setLoad_register(register);
+                stackNum.push(new StackNumEle(false,tmp_var));
+                register++;
+                return 0;
+            }
+            case Putint:{
+                result.append("call void @putint(").append(param).append(")").append("\n");
+                return 1;
+            }
+            case Putch:{
+                result.append("call void @putch(").append(param).append(")").append("\n");
+                return 1;
+            }
+            default:error();return -1;
+        }
+    }
+    public StackNumEle Exp(int type){
+        int count=1;
+//        out.println("EXP-----------");
 //        out.println(token);
+        if(type==1){
+            if(token==Tokens.LPar){
+                count=count+1;
+            }
+            else if(token==Tokens.RPar){
+                return stackNum.pop();
+            }
+        }
         if(token==Tokens.NUMBER){
             stackNum.push(new StackNumEle(true,tokenTrap.getNumber()));
         }
         else if(token== Tokens.Ident){
             pushIdent();
+        }
+        else if(isFunc()){
+            int x = handleFunc();
+            if(x==1){
+                getSym();
+                return null;
+            }
         }
         else if(token.ordinal()>numExp){
             error();
@@ -268,21 +348,63 @@ public class GrammarAnalyze {
         }
         getSym();
         while (idx_t< tokens.size()&&token!=Tokens.Semicolon&&token!=Tokens.Comma){
-////            out.println(token);
-            if(token.ordinal()>numExp){
-                error();
+//            out.println(token);
+            if(type==1){
+                if(token==Tokens.LPar){
+                    count=count+1;
+                }
+                else if(token==Tokens.RPar){
+                    count=count-1;
+                    if(count==0){
+                        break;
+                    }
+                }
             }
-            else if(token==Tokens.NUMBER){
+            if(token==Tokens.NUMBER){
                 stackNum.push(new StackNumEle(true,tokenTrap.getNumber()));
                 getSym();
             }
             else if(token== Tokens.Ident){
                 pushIdent();
                 getSym();
+//                out.println("OK2");
+            }
+            else if(isFunc()){
+                handleFunc();
+            }
+            else if(token.ordinal()>numExp){
+                error();
             }
             else {
-                chooseGuiYue();
+                if(stackOp.empty()) {
+                    stackOp.push(token);
+                    getSym();
+                }
+                else {
+                    int x =priority[stackOp.peek().ordinal()][token.ordinal()];
+                    //0是小于，1是大于，-1是相等，-2是错误
+                    if(x==0){
+                        stackOp.push(token);
+                        getSym();
+                    }
+                    else if(x==-1){
+                        if(stackNum.empty()){
+                            error();
+                        }
+                        else {
+                            stackOp.pop();
+                        }
+                        getSym();
+                    }
+                    else if(x==1){
+                        guiYue();
+                    }
+                    else {
+                        error();
+                    }
+                }
             }
+
         }
         while (!stackOp.empty()){
             guiYue();
@@ -292,54 +414,8 @@ public class GrammarAnalyze {
         }
         return stackNum.pop();
     }
-
-    private void chooseGuiYue() {
-        if(stackOp.empty()) {
-            stackOp.push(token);
-            getSym();
-        }
-        else {
-            int x =priority[stackOp.peek().ordinal()][token.ordinal()];
-            if(x==0){
-                stackOp.push(token);
-                getSym();
-            }
-            else if(x==-1){
-                if(stackNum.empty()){
-                    error();
-                }
-                else {
-                    stackOp.pop();
-                }
-                getSym();
-            }
-            else if(x==1){
-                guiYue();
-            }
-            else {
-                error();
-            }
-        }
-    }
-
-    private void pushIdent() {
-        StackNumEle stackNumEle;
-        Integer tmp = consts.get(tokenTrap.getIdentName());
-        if(tmp == null){
-            Var var = vars.get(tokenTrap.getIdentName());
-            if(var==null){
-                error();
-            }
-            stackNumEle = new StackNumEle(false,var);
-        }
-        else {
-            stackNumEle = new StackNumEle(true,tmp);
-        }
-        stackNum.push(stackNumEle);
-    }
-
     public StackNumEle ConstExp(){
-////        out.println(token);
+
         if(token==Tokens.NUMBER){
             stackNum.push(new StackNumEle(true,tokenTrap.getNumber()));
         }
@@ -348,8 +424,12 @@ public class GrammarAnalyze {
             if(tmp == null){
                 error();
             }
-            stackNum.push(new StackNumEle(true,tokenTrap.getNumber()));
+//            out.println(tmp);
+            stackNum.push(new StackNumEle(true,tmp));
         }
+//        else if(isFunc()){
+//            handleFunc();
+//        }
         else if(token.ordinal()>numExp){
             error();
         }
@@ -358,11 +438,8 @@ public class GrammarAnalyze {
         }
         getSym();
         while (idx_t< tokens.size()&&token!=Tokens.Semicolon&&token!=Tokens.Comma){
-////            out.println(token);
-            if(token.ordinal()>numExp){
-                error();
-            }
-            else if(token==Tokens.NUMBER){
+//////            out.println(token);
+            if(token==Tokens.NUMBER){
                 stackNum.push(new StackNumEle(true,tokenTrap.getNumber()));
                 getSym();
             }
@@ -371,12 +448,45 @@ public class GrammarAnalyze {
                 if(tmp == null){
                     error();
                 }
-                stackNum.push(new StackNumEle(true,tokenTrap.getNumber()));
+                stackNum.push(new StackNumEle(true,tmp));
             }
-            else chooseGuiYue();
+//            else if(isFunc()){
+//                handleFunc();
+//            }
+            else if(token.ordinal()>numExp){
+                error();
+            }
+            else {
+                if(stackOp.empty()) {
+                    stackOp.push(token);
+                    getSym();
+                }
+                else {
+                    int x =priority[stackOp.peek().ordinal()][token.ordinal()];
+                    if(x==0){
+                        stackOp.push(token);
+                        getSym();
+                    }
+                    else if(x==-1){
+                        if(stackNum.empty()){
+                            error();
+                        }
+                        else {
+                            stackOp.pop();
+                        }
+                        getSym();
+                    }
+                    else if(x==1){
+                        constGuiYue();
+                    }
+                    else {
+                        error();
+                    }
+                }
+            }
         }
         while (!stackOp.empty()){
-            guiYue();
+            constGuiYue();
         }
         if (stackNum.size()!=1){
             error();
@@ -438,6 +548,106 @@ public class GrammarAnalyze {
                 error();
         }
     }
+    private void constGuiYue() {
+        StackNumEle tmp1;
+        StackNumEle tmp2;
+        switch (stackOp.pop()){
+            case BinAdd:{
+                if (stackNum.size()<2){
+                    error();
+                }
+                else {
+                    tmp1 = stackNum.pop();
+                    tmp2 = stackNum.pop();
+                    tmp1.setNumber(tmp2.getNumber()+tmp1.getNumber());
+                    stackNum.push(tmp1);
+                }
+                break;
+            }
+            case BinDec:{
+                if (stackNum.size()<2){
+                    error();
+                }
+                else {
+                    tmp1 = stackNum.pop();
+                    tmp2 = stackNum.pop();
+                    tmp1.setNumber(tmp2.getNumber()-tmp1.getNumber());
+                    stackNum.push(tmp1);
+                }
+                break;
+            }
+            case Mul:{
+                if (stackNum.size()<2){
+                    error();
+                }
+                else {
+                    tmp1 = stackNum.pop();
+                    tmp2 = stackNum.pop();
+                    tmp1.setNumber(tmp2.getNumber()*tmp1.getNumber());
+                    stackNum.push(tmp1);
+                }
+                break;
+            }
+            case Div:{
+                if (stackNum.size()<2){
+                    error();
+                }
+                else {
+                    tmp1 = stackNum.pop();
+                    tmp2 = stackNum.pop();
+                    tmp1.setNumber(tmp2.getNumber()/tmp1.getNumber());
+                    stackNum.push(tmp1);
+                }
+                break;
+            }
+            case Mod:{
+                if (stackNum.size()<2){
+                    error();
+                }
+                else {
+                    tmp1 = stackNum.pop();
+                    tmp2 = stackNum.pop();
+                    tmp1.setNumber(tmp2.getNumber()%tmp1.getNumber());
+                    stackNum.push(tmp1);
+                }
+                break;
+            }
+            case UnaryOpAdd:{
+                if (stackNum.size()<1){
+                    error();
+                }
+                break;
+            }
+            case UnaryOpDec:{
+                if (stackNum.size()<1){
+                    error();
+                }
+                else {
+                    tmp1 = stackNum.pop();
+                    tmp1.setNumber(-tmp1.getNumber());
+                    stackNum.push(tmp1);
+                }
+                break;
+            }
+            default:
+                error();
+        }
+    }
+    private void pushIdent() {
+        StackNumEle stackNumEle;
+        Integer tmp = consts.get(tokenTrap.getIdentName());
+        if(tmp == null){
+            Var var = vars.get(tokenTrap.getIdentName());
+            if(var==null){
+                error();
+            }
+            stackNumEle = new StackNumEle(false,var);
+        }
+        else {
+            stackNumEle = new StackNumEle(true,tmp);
+        }
+        stackNum.push(stackNumEle);
+    }
     //从StackNumEle中提取出变量值或寄存器值
     private String getNumString(StackNumEle tmp1) {
         String x1;
@@ -459,6 +669,7 @@ public class GrammarAnalyze {
         StackNumEle tmp1;
         StackNumEle tmp2;
         String x1,x2;
+//        out.println(token);
         if (stackNum.size()<2){
             error();
         }
@@ -507,7 +718,7 @@ public class GrammarAnalyze {
         GrammarAnalyze grammarAnalyze = new GrammarAnalyze();
         grammarAnalyze.analyze(args[0]);
         BufferedWriter out = new BufferedWriter(new FileWriter(args[1]));
-//        System.out.println(String.valueOf(grammarAnalyze.result));
+////        System.out.println(String.valueOf(grammarAnalyze.result));
         out.write(String.valueOf(grammarAnalyze.result));
         out.close();
     }

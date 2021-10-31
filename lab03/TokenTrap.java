@@ -20,6 +20,11 @@ public class TokenTrap {
     public TokenTrap(Tokens token) {
         this.token = token;
     }
+    public TokenTrap(TokenTrap trap){
+        this.token=trap.getToken();
+        this.number=trap.getNumber();
+        this.identName=trap.getIdentName();
+    }
 
     public Tokens getToken() {
         return token;
