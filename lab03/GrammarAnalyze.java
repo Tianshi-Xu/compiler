@@ -19,7 +19,7 @@ public class GrammarAnalyze {
     private Tokens token;
     private StringBuffer result = new StringBuffer();
     private int idx_t=0;
-    private int numExp=10;
+    private final int numExp=10;
     private int register=1;
     public GrammarAnalyze(){
         stackNum = new Stack<>();
