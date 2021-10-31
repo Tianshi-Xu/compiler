@@ -38,12 +38,8 @@ public class GrammarAnalyze {
     }
     public void analyze(String path) throws Exception {
         wordAnalyze.readFile(path);
-        out.println("OK");
         wordAnalyze.analyze();
         tokens = wordAnalyze.getTokens();
-        for (TokenTrap i : tokens){
-            out.println(i.getToken());
-        }
         try {
             FuncDef();
         }

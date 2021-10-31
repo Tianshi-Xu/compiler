@@ -53,6 +53,7 @@ public class WordAnalyze {
                 chars.append((char)tempchar);
             }
         }
+        System.out.println(chars);
         reader.close();
     }
     //词法分析
