@@ -12,13 +12,11 @@ import static java.lang.System.exit;
  *
  */
 public class WordAnalyze {
-    private ArrayList<Tokens> tokens = new ArrayList<>();
-    private ArrayList<Integer> numbers = new ArrayList<>();
-    private String keyWord[] = {"int","return","main","const"};
-    private ArrayList<Tokens> keyWordList = new ArrayList<>();
-    private ArrayList<String> identList = new ArrayList<>();
+    private final ArrayList<TokenTrap> tokens = new ArrayList<>();
+    private final String[] keyWord = {"int","return","main","const"};
+    private final ArrayList<Tokens> keyWordList = new ArrayList<>();
     private char ch;
-    private StringBuilder chars = new StringBuilder();
+    private final StringBuilder chars = new StringBuilder();
     public WordAnalyze(){
         keyWordList.add(Tokens.INT);
         keyWordList.add(Tokens.RETURN);
@@ -89,7 +87,7 @@ public class WordAnalyze {
                         }
                     }
                     else {
-                        tokens.add(Tokens.Div);
+                        tokens.add(new TokenTrap(Tokens.Div));
                     }
                 }
                 else if(isLetter(ch)||ch=='_'){
@@ -104,15 +102,14 @@ public class WordAnalyze {
                     for (int j=0;j<keyWord.length;j++) {
                         if (keyWord[j].equals(arr.toString())){
                             //关键字
-                            tokens.add(keyWordList.get(j));
+                            tokens.add(new TokenTrap(keyWordList.get(j)));
                             flag=0;
                             break;
                         }
                     }
                     if(flag==1){
                         //标识符
-                        tokens.add(Tokens.Ident);
-                        identList.add(String.valueOf(arr));
+                        tokens.add(new TokenTrap(Tokens.Ident,String.valueOf(arr)));
                     }
                 }
                 else if(isDigit(ch))
@@ -128,8 +125,7 @@ public class WordAnalyze {
                                     arr.append(ch);
                                     ch = chars.charAt(++i);
                                 }
-                                tokens.add(Tokens.NUMBER);
-                                numbers.add(Integer.parseInt(String.valueOf(arr), 16));
+                                tokens.add(new TokenTrap(Tokens.NUMBER,Integer.valueOf(String.valueOf(arr), 16)));
                             }
                             else {
                                 arr.append(chars.charAt(i));
@@ -140,14 +136,12 @@ public class WordAnalyze {
                                     arr.append(ch);
                                     ch = chars.charAt(++i);
                                 }
-                                tokens.add(Tokens.NUMBER);
-                                numbers.add(Integer.parseInt(String.valueOf(arr), 8));
+                                tokens.add(new TokenTrap(Tokens.NUMBER,Integer.valueOf(String.valueOf(arr), 8)));
                             }
                             i--;
                         }
                         else {
-                            tokens.add(Tokens.NUMBER);
-                            numbers.add(0);
+                            tokens.add(new TokenTrap(Tokens.NUMBER,0));
                         }
                     }
                     else {
@@ -156,28 +150,27 @@ public class WordAnalyze {
                             arr.append(ch);
                             ch = chars.charAt(++i);
                         }
-                        tokens.add(Tokens.NUMBER);
-                        numbers.add(Integer.parseInt(String.valueOf(arr), 10));
+                        tokens.add(new TokenTrap(Tokens.NUMBER,Integer.parseInt(String.valueOf(arr), 10)));
                         i--;
                     }
                     //属于无符号常数
                 }
                 else switch(ch){
                         //运算符
-                        case '(':tokens.add(Tokens.LPar);break;
-                        case ')':tokens.add(Tokens.RPar);break;
-                        case ';':tokens.add(Tokens.Semicolon);break;
-                        case '{':tokens.add(Tokens.LBrace);break;
-                        case '}':tokens.add(Tokens.RBrace);break;
+                        case '(':tokens.add(new TokenTrap(Tokens.LPar));break;
+                        case ')':tokens.add(new TokenTrap(Tokens.RPar));break;
+                        case ';':tokens.add(new TokenTrap(Tokens.Semicolon));break;
+                        case '{':tokens.add(new TokenTrap(Tokens.LBrace));break;
+                        case '}':tokens.add(new TokenTrap(Tokens.RBrace));break;
                         case '+':{
                             if (tokens.isEmpty()){
                                 error();
                             }
-                            else if (tokens.get(tokens.size()-1)==Tokens.NUMBER||tokens.get(tokens.size()-1)==Tokens.RPar){
-                                tokens.add(Tokens.BinAdd);
+                            else if (tokens.get(tokens.size()-1).getToken()==Tokens.NUMBER||tokens.get(tokens.size()-1).getToken()==Tokens.RPar||tokens.get(tokens.size()-1).getToken()==Tokens.Ident){
+                                tokens.add(new TokenTrap(Tokens.BinAdd));
                             }
                             else {
-                                tokens.add(Tokens.UnaryOpAdd);
+                                tokens.add(new TokenTrap(Tokens.UnaryOpAdd));
                             }
                             break;
                         }
@@ -185,17 +178,18 @@ public class WordAnalyze {
                             if (tokens.isEmpty()){
                                 error();
                             }
-                            else if (tokens.get(tokens.size()-1)==Tokens.NUMBER||tokens.get(tokens.size()-1)==Tokens.RPar){
-                                tokens.add(Tokens.BinDec);
+                            else if (tokens.get(tokens.size()-1).getToken()==Tokens.NUMBER||tokens.get(tokens.size()-1).getToken()==Tokens.RPar||tokens.get(tokens.size()-1).getToken()==Tokens.Ident){
+                                tokens.add(new TokenTrap(Tokens.BinDec));
                             }
                             else {
-                                tokens.add(Tokens.UnaryOpDec);
+                                tokens.add(new TokenTrap(Tokens.UnaryOpDec));
                             }
                             break;
                         }
-                        case '*':tokens.add(Tokens.Mul);break;
-                        case '%':tokens.add(Tokens.Mod);break;
-                        case '=':tokens.add(Tokens.Equal);break;
+                        case '*':tokens.add(new TokenTrap(Tokens.Mul));break;
+                        case '%':tokens.add(new TokenTrap(Tokens.Mod));break;
+                        case '=':tokens.add(new TokenTrap(Tokens.Equal));break;
+                        case ',':tokens.add(new TokenTrap(Tokens.Comma));break;
                         default: {
                             error();
                         }
@@ -210,13 +204,10 @@ public class WordAnalyze {
         exit(1);
     }
 
-    public ArrayList<Tokens> getTokens() {
+    public ArrayList<TokenTrap> getTokens() {
         return tokens;
     }
 
-    public ArrayList<Integer> getNumbers() {
-        return numbers;
-    }
 
     public String[] getKeyWord() {
         return keyWord;
