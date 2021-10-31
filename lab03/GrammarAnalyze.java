@@ -508,6 +508,7 @@ public class GrammarAnalyze {
         GrammarAnalyze grammarAnalyze = new GrammarAnalyze();
         grammarAnalyze.analyze(args[0]);
         BufferedWriter out = new BufferedWriter(new FileWriter(args[1]));
+        System.out.println(String.valueOf(grammarAnalyze.result));
         out.write(String.valueOf(grammarAnalyze.result));
         out.close();
     }
