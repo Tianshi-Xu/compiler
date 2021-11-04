@@ -1,19 +1,4 @@
 int main() {
-    // newline=10;
-    int n;
-    int i;
-    int j;
-    // m = 1478;
-    // int t;
-    i = 4;
-    j = 20;
-    int temp;
-    temp = i;
-    i    = j;
-    j    = temp;
-
-    putint(i);
-    temp = 10;
-    putint(j);
+    int a=1 1 +;
     return 0;
 }

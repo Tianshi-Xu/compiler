@@ -8,7 +8,7 @@ import java.util.Stack;
 import static java.lang.System.*;
 
 public class GrammarAnalyze {
-    private WordAnalyze wordAnalyze = new WordAnalyze();
+    private final WordAnalyze wordAnalyze = new WordAnalyze();
     private ArrayList<TokenTrap> tokens;
     private final Stack<StackNumEle> stackNum;
     private final Stack<Tokens> stackOp;
@@ -115,6 +115,21 @@ public class GrammarAnalyze {
         }
         getSym();
     }
+    public void Cond(){
+
+    }
+    public StackNumEle LOrExp(){
+        return null;
+    }
+    public StackNumEle LAndExp(){
+        return null;
+    }
+    public StackNumEle EqExp(){
+        return null;
+    }
+    public StackNumEle RelExp(){
+        return null;
+    }
     public void Stmt(){
         if(token==Tokens.RETURN){
             getSym();
@@ -132,7 +147,7 @@ public class GrammarAnalyze {
             }
         }
         else if(token==Tokens.Ident){
-            if(tokens.get(idx_t).getToken()==Tokens.Equal){
+            if(tokens.get(idx_t).getToken()==Tokens.Assign){
                 TokenTrap tmp1 = LVal();
                 Var var = vars.get(tmp1.getIdentName());
                 if(var == null){
@@ -161,6 +176,25 @@ public class GrammarAnalyze {
             }
             getSym();
         }
+        else if(token==Tokens.LBrace){
+            Block();
+        }
+        else if(token==Tokens.IF){
+            getSym();
+            if(token!=Tokens.LPar){
+                error();
+            }
+            getSym();
+            Cond();
+            if(token!=Tokens.RPar){
+                error();
+            }
+            Stmt();
+            if (token==Tokens.ELSE){
+                getSym();
+                Stmt();
+            }
+        }
         else {
             error();
         }
@@ -173,7 +207,7 @@ public class GrammarAnalyze {
         if(consts.get(tmp1.getIdentName())!=null||vars.get(tmp1.getIdentName())!=null){
             error();
         }
-        else if(token!=Tokens.Equal){
+        else if(token!=Tokens.Assign){
             error();
         }
 
@@ -209,7 +243,7 @@ public class GrammarAnalyze {
         tmp_var.setTrue_register(register);
         vars.put(tmp1.getIdentName(),tmp_var);
         register++;
-        if(token==Tokens.Equal){
+        if(token==Tokens.Assign){
             getSym();
             StackNumEle tmp2 = InitVal();
 ////            out.println("OK4");
@@ -680,7 +714,6 @@ public class GrammarAnalyze {
             x2 = getNumString(tmp2);
             result.append("%").append(register).append(" = ").append(op).append(" ").
                     append("i32 ").append(x2).append(", ").append(x1).append("\n");
-
             Var tmp_var = new Var();
             tmp_var.setLoad_register(register);
             stackNum.push(new StackNumEle(false,tmp_var));

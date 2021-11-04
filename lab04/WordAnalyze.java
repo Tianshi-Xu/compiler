@@ -1,6 +1,5 @@
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import static java.lang.System.*;
 
@@ -12,7 +11,7 @@ import static java.lang.System.*;
  */
 public class WordAnalyze {
     private final ArrayList<TokenTrap> tokens = new ArrayList<>();
-    private final String[] keyWord = {"int","return","main","const","getint","getch","putint","putch"};
+    private final String[] keyWord = {"int","return","main","const","getint","getch","putint","putch","if","else"};
     private final ArrayList<Tokens> keyWordList = new ArrayList<>();
     private char ch;
     private final StringBuilder chars = new StringBuilder();
@@ -25,6 +24,8 @@ public class WordAnalyze {
         keyWordList.add(Tokens.Getch);
         keyWordList.add(Tokens.Putint);
         keyWordList.add(Tokens.Putch);
+        keyWordList.add(Tokens.IF);
+        keyWordList.add(Tokens.ELSE);
     }
     //判断是否是字母
     boolean isLetter(char letter)
@@ -57,7 +58,7 @@ public class WordAnalyze {
             }
         }
         //搞一手评测数据
-//        System.out.println(chars);
+        System.out.println(chars);
         reader.close();
     }
     //词法分析
@@ -192,8 +193,71 @@ public class WordAnalyze {
                         }
                         case '*':tokens.add(new TokenTrap(Tokens.Mul));break;
                         case '%':tokens.add(new TokenTrap(Tokens.Mod));break;
-                        case '=':tokens.add(new TokenTrap(Tokens.Equal));break;
+                        case '=':{
+                            i++;
+                            if(chars.charAt(i)=='='){
+                                tokens.add(new TokenTrap(Tokens.Eq));
+                            }
+                            else {
+                                tokens.add(new TokenTrap(Tokens.Assign));
+                                i--;
+                            }
+                            break;
+                        }
                         case ',':tokens.add(new TokenTrap(Tokens.Comma));break;
+                        case '!':{
+                            i++;
+                            if(chars.charAt(i)=='='){
+                                tokens.add(new TokenTrap(Tokens.NEq));
+                            }
+                            else {
+                                tokens.add(new TokenTrap(Tokens.NOT));
+                                i--;
+                            }
+                            break;
+                        }
+                        case '>':{
+                            i++;
+                            if(chars.charAt(i)=='='){
+                                tokens.add(new TokenTrap(Tokens.Ge));
+                            }
+                            else {
+                                tokens.add(new TokenTrap(Tokens.G));
+                                i--;
+                            }
+                            break;
+                        }
+                        case '<':{
+                            i++;
+                            if(chars.charAt(i)=='='){
+                                tokens.add(new TokenTrap(Tokens.Le));
+                            }
+                            else {
+                                tokens.add(new TokenTrap(Tokens.L));
+                                i--;
+                            }
+                            break;
+                        }
+                        case '&':{
+                            i++;
+                            if(chars.charAt(i)=='&'){
+                                tokens.add(new TokenTrap(Tokens.AND));
+                            }
+                            else {
+                                error();
+                            }
+                            break;
+                        }
+                        case '|':{
+                            i++;
+                            if(chars.charAt(i)=='|'){
+                                tokens.add(new TokenTrap(Tokens.OR));
+                            }
+                            else {
+                                error();
+                            }
+                            break;
+                        }
                         default: {
                             error();
                         }
