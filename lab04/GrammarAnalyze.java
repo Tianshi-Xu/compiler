@@ -512,8 +512,8 @@ public class GrammarAnalyze {
                 ||token==Tokens.LT||token==Tokens.Eq||token==Tokens.NEq||token==Tokens.AND||token==Tokens.OR;
     }
     public StackNumEle Exp(int type){
-        int count=1;
-        Tokens last_token;
+        int count=1,flag;
+        boolean isRead=true;
 //        out.println("EXP-----------");
 //        out.println(token);
         if(type==1){
@@ -543,10 +543,10 @@ public class GrammarAnalyze {
         else {
             stackOp.push(token);
         }
-        last_token=token;
         getSym();
         while (idx_t< tokens.size()&&!ExpOver()){
-            if(type==1&&last_token!=token){
+            flag=0;
+            if(type==1&&isRead){
                 if(token==Tokens.LPar){
                     count=count+1;
                 }
@@ -557,7 +557,6 @@ public class GrammarAnalyze {
                     }
                 }
             }
-            last_token=token;
             if(token==Tokens.NUMBER){
                 stackNum.push(new StackNumEle(true,new Num(tokenTrap.getNumber(),"i32")));
                 getSym();
@@ -596,13 +595,14 @@ public class GrammarAnalyze {
                     }
                     else if(x==1){
                         guiYue();
+                        flag=1;
                     }
                     else {
                         error();
                     }
                 }
             }
-
+            isRead= flag != 1;
         }
         while (!stackOp.empty()){
             guiYue();
