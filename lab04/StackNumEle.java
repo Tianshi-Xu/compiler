@@ -1,11 +1,11 @@
 public class StackNumEle {
     private boolean isNumber;
-    private Integer number;
     private Var var;
+    private Num num;
 
-    public StackNumEle(boolean isNumber, Integer number) {
+    public StackNumEle(boolean isNumber, Num num) {
         this.isNumber = isNumber;
-        this.number = number;
+        this.num = num;
     }
 
     public StackNumEle(boolean isNumber, Var var) {
@@ -21,19 +21,19 @@ public class StackNumEle {
         isNumber = number;
     }
 
-    public Integer getNumber() {
-        return number;
-    }
-
-    public void setNumber(Integer number) {
-        this.number = number;
-    }
-
     public Var getVar() {
         return var;
     }
 
     public void setVar(Var var) {
         this.var = var;
+    }
+
+    public Num getNum() {
+        return num;
+    }
+
+    public void setNum(Num num) {
+        this.num = num;
     }
 }

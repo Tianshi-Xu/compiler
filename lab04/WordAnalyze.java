@@ -58,7 +58,7 @@ public class WordAnalyze {
             }
         }
         //搞一手评测数据
-        System.out.println(chars);
+//        System.out.println(chars);
         reader.close();
     }
     //词法分析
@@ -222,7 +222,7 @@ public class WordAnalyze {
                                 tokens.add(new TokenTrap(Tokens.Ge));
                             }
                             else {
-                                tokens.add(new TokenTrap(Tokens.G));
+                                tokens.add(new TokenTrap(Tokens.GT));
                                 i--;
                             }
                             break;
@@ -233,7 +233,7 @@ public class WordAnalyze {
                                 tokens.add(new TokenTrap(Tokens.Le));
                             }
                             else {
-                                tokens.add(new TokenTrap(Tokens.L));
+                                tokens.add(new TokenTrap(Tokens.LT));
                                 i--;
                             }
                             break;
