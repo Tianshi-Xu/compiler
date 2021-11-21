@@ -44,16 +44,39 @@ public class GrammarAnalyze {
         codeBlocks.add(new CodeBlock("x0",new StringBuffer()));
         codeBlocks.get(0).getResult().append("declare i32 @getint()\n" +"declare void @putint(i32)\n"+"declare i32 @getch()\n" +"declare void @putch(i32)\n");
         try {
-            FuncDef();
+            CompUnit();
         }
         catch (Exception e){
             error();
         }
     }
-    public void FuncDef(){
+    public void CompUnit(){
         getSym();
+        top_index.push(top_now+1);
+        while (true){
+            if(token==Tokens.CONST){
+                ConstDecl();
+            }
+            else if(token==Tokens.INT){
+                if(tokens.get(idx_t).getToken()==Tokens.MAIN){
+                    break;
+                }
+                else {
+                    VarDecl();
+                }
+            }
+            else {
+                error();
+            }
+        }
+        FuncDef();
+    }
+    public void FuncDef(){
+
         FuncType();
+//        out.println(token);
         IdentMain();
+
         if(token!=Tokens.LPar){
             error();
         }
@@ -385,6 +408,7 @@ public class GrammarAnalyze {
         }
         getSym();
         StackElement tmp2 = ConstInitVal();
+        tmp2.setName(tmp1.getIdentName());
         symbolStack[++top_now] = tmp2;
     }
     public void ConstDecl(){
@@ -424,7 +448,7 @@ public class GrammarAnalyze {
         if(token==Tokens.Assign){
             getSym();
             StackElement tmp2 = InitVal();
-//////            out.println("OK4");
+//            out.println("OK4");
             //给变量赋值
             storeRegister(tmp_var,tmp2);
         }
@@ -435,7 +459,6 @@ public class GrammarAnalyze {
         VarDef();
         //0次或多次
         while (token==Tokens.Comma){
-
             getSym();
             VarDef();
         }
@@ -534,7 +557,6 @@ public class GrammarAnalyze {
         int count=1,flag;
         boolean isRead=true;
 //        out.println("EXP-----------");
-//        out.println(token);
         if(type==1){
             if(token==Tokens.LPar){
                 count=count+1;
