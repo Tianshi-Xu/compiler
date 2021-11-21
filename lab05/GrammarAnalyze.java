@@ -50,6 +50,46 @@ public class GrammarAnalyze {
             error();
         }
     }
+    public void VarDeclGlo(){
+        BType();
+        VarDefGlo();
+        //0次或多次
+        while (token==Tokens.Comma){
+            getSym();
+            VarDefGlo();
+        }
+        if(token!=Tokens.Semicolon){
+            error();
+        }
+        getSym();
+    }
+    public void VarDefGlo(){
+        TokenTrap tmp1 = Ident();
+        int l,r;
+        l=top_index.peek();
+        r=top_now;
+        for(int i=l;i<=r;i++){
+            StackElement stackElement = symbolStack[i];
+            if(stackElement.getName().equals(tmp1.getIdentName())){
+                error();
+            }
+        }
+        if(token==Tokens.Assign){
+            getSym();
+            StackElement tmp2 = ConstInitVal();
+            //@a = dso_local global i32 5
+            codeBlocks.get(block_idx).getResult().append("@").append(tmp1.getIdentName())
+                    .append(" = dso_local global i32 ").append(tmp2.getNum().getNumber()).append("\n");
+        }
+        else {
+            codeBlocks.get(block_idx).getResult().append("@").append(tmp1.getIdentName())
+                    .append(" = dso_local global i32 0").append("\n");
+        }
+        Var tmp_var = new Var("i32",true);
+        tmp_var.setName(tmp1.getIdentName());
+        symbolStack[++top_now]=new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
+    }
+
     public void CompUnit(){
         getSym();
         top_index.push(top_now+1);
@@ -62,7 +102,7 @@ public class GrammarAnalyze {
                     break;
                 }
                 else {
-                    VarDecl();
+                    VarDeclGlo();
                 }
             }
             else {
@@ -160,7 +200,7 @@ public class GrammarAnalyze {
             String x1 = getNumString(tmp1);
             String x2 = getNumString(tmp2);
             codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = or i1 ").append(x1).append(",").append(x2).append("\n");
-            Var tmp_var = new Var("i1");
+            Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register,block_idx);
             tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
             register++;
@@ -175,7 +215,7 @@ public class GrammarAnalyze {
             String x1 = getNumString(tmp1);
             String x2 = getNumString(tmp2);
             codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = and i1 ").append(x1).append(",").append(x2).append("\n");
-            Var tmp_var = new Var("i1");
+            Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register,block_idx);
             tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
             register++;
@@ -212,7 +252,7 @@ public class GrammarAnalyze {
         String x2 = getNumString32(tmp2);
         codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = ").append("icmp ").append(op)
                 .append(" i32 ").append(x1).append(",").append(x2).append("\n");
-        Var tmp_var = new Var("i1");
+        Var tmp_var = new Var("i1",false);
         tmp_var.setLoad_register(register,block_idx);
         tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
         register++;
@@ -441,7 +481,7 @@ public class GrammarAnalyze {
         }
         //先声明变量
         codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = alloca i32").append("\n");
-        Var tmp_var = new Var("i32");
+        Var tmp_var = new Var("i32",false);
         tmp_var.setTrue_register(register);
         symbolStack[++top_now]=new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
         register++;
@@ -524,7 +564,7 @@ public class GrammarAnalyze {
         switch (tmp_token){
             case Getint:{
                 codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = call i32 @getint(").append(param).append(")").append("\n");
-                Var tmp_var = new Var("i32");
+                Var tmp_var = new Var("i32",false);
                 tmp_var.setLoad_register(register,block_idx);
                 stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                 register++;
@@ -532,7 +572,7 @@ public class GrammarAnalyze {
             }
             case Getch:{
                 codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = call i32 @getch(").append(param).append(")").append("\n");
-                Var tmp_var = new Var("i32");
+                Var tmp_var = new Var("i32",false);
                 tmp_var.setLoad_register(register,block_idx);
                 stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                 register++;
@@ -795,7 +835,7 @@ public class GrammarAnalyze {
                             register++;
                         }
                         codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = ").append("sub ").append("i32 0, ").append(x1).append("\n");
-                        tmp_var = new Var("i32");
+                        tmp_var = new Var("i32",false);
                         tmp_var.setLoad_register(register,block_idx);
                         stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                         register++;
@@ -817,7 +857,7 @@ public class GrammarAnalyze {
                         x1 = getNumString(tmp1);
                         codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = ").append("icmp eq ")
                                 .append(tmp1.getVar().getType()).append(" ").append(x1).append(", 0").append("\n");
-                        Var tmp_var = new Var("i1");
+                        Var tmp_var = new Var("i1",false);
                         tmp_var.setLoad_register(register,block_idx);
                         stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                         register++;
@@ -938,7 +978,7 @@ public class GrammarAnalyze {
                 register++;
             }
             else {
-                x1 = " %u"+var.getLoad_register(block_idx);
+                    x1 = " %u"+var.getLoad_register(block_idx);
             }
         }
         return x1;
@@ -973,7 +1013,7 @@ public class GrammarAnalyze {
             x2 = getNumString(tmp2);
             codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = ").append(op).append(" ").
                     append("i32 ").append(x2).append(", ").append(x1).append("\n");
-            Var tmp_var = new Var("i32");
+            Var tmp_var = new Var("i32",false);
             tmp_var.setLoad_register(register,block_idx);
             stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
             register++;
@@ -983,9 +1023,16 @@ public class GrammarAnalyze {
     //中间代码生成系列：为变量load一个新的寄存器
     private void loadRegister(Var var){
         var.setLoad_register(register,block_idx);
-        codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = load ").
-                append(var.getType()).append(", ").append(var.getType()).
-                append("* %u").append(var.getTrue_register()).append("\n");
+        if(var.isGlobal()){
+            codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = load ").
+                    append(var.getType()).append(", ").append(var.getType()).
+                    append("* @").append(var.getName()).append("\n");
+        }
+        else {
+            codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = load ").
+                    append(var.getType()).append(", ").append(var.getType()).
+                    append("* %u").append(var.getTrue_register()).append("\n");
+        }
         register++;
     }
     //中间代码生成系列：为寄存器store一个新的值

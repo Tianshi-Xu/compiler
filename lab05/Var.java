@@ -6,12 +6,21 @@ public class Var {
     //值被加载出去的寄存器
     private int[] load_register;
 
+    private final boolean isGlobal;
+
+    private String name;
+
     private String type;
-    public Var(String type){
+    public Var(String type, boolean isGlobal){
         this.type= type;
         load_register=new int[10000];
         Arrays.fill(load_register, -1);
         true_register=-1;
+        this.isGlobal=isGlobal;
+    }
+
+    public boolean isGlobal() {
+        return isGlobal;
     }
 
     public int getTrue_register() {
@@ -36,5 +45,13 @@ public class Var {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
