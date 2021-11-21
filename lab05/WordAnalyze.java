@@ -58,7 +58,7 @@ public class WordAnalyze {
             }
         }
         //搞一手评测数据
-        System.out.println(chars);
+//        System.out.println(chars);
         reader.close();
     }
     //词法分析

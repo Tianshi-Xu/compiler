@@ -1,7 +1,6 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Stack;
 
 import static java.lang.System.*;
@@ -9,25 +8,23 @@ import static java.lang.System.*;
 public class GrammarAnalyze {
     private final WordAnalyze wordAnalyze = new WordAnalyze();
     private ArrayList<TokenTrap> tokens;
-    private final Stack<StackNumEle> stackNum;
+    private final Stack<StackElement> stackNum;
     private final Stack<Tokens> stackOp;
     private final short[][] priority;
-    private final HashMap<String, Var> vars;  //保存当前已经出现过的变量，对应有寄存器的值
-    private final HashMap<String, Num> consts; //保存当前已经出现过的常量，及对应的值
     private TokenTrap tokenTrap;
     private Tokens token;
     private final ArrayList<CodeBlock> codeBlocks = new ArrayList<>();
+    private final Stack<Integer> top_index = new Stack<>();
+    private final StackElement[] symbolStack = new StackElement[100000]; //符号栈,用列表模拟
+    private int top_now=-1;
     private int block_idx=0;
     private int idx_t=0;
     private final int numExp=11;
     private int register=1;
     private int par_flag_l=0;
-    private int par_flag_r=0;
     public GrammarAnalyze(){
         stackNum = new Stack<>();
         stackOp = new Stack<>();
-        vars = new HashMap<>();
-        consts = new HashMap<>();
         //0是小于，1是大于，-1是相等，-2是错误
         priority = new short[][]{
                 {1,1,0,0,0,0,0,0,0,1,0,0},{1,1,0,0,0,0,0,0,0,1,0,0},
@@ -61,14 +58,15 @@ public class GrammarAnalyze {
             error();
         }
         codeBlocks.get(block_idx).getResult().append('(');
-//////        System.out.print("(");
+////////        System.out.print("(");
         getSym();
         if(token!=Tokens.RPar){
             error();
         }
         codeBlocks.get(block_idx).getResult().append(")");
-//////        System.out.print(") ");
+////////        System.out.print(") ");
         getSym();
+        top_index.push(top_now+1);
         Block();
         if(token!=Tokens.END){
             error();
@@ -96,15 +94,13 @@ public class GrammarAnalyze {
             codeBlocks.get(block_idx).getResult().append("{\n");
             par_flag_l=1;
         }
-
         getSym();
-
         BlockItem();
-
         while (token!=Tokens.RBrace){
             BlockItem();
         }
-////        out.println("OK2");
+        top_now = top_index.pop()-1;
+//////        out.println("OK2");
 //        if(par_flag_r==0) {
 //            codeBlocks.get(block_idx).getResult().append(Util.TAB).append("}");
 //            par_flag_r=1;
@@ -128,53 +124,53 @@ public class GrammarAnalyze {
         }
         getSym();
     }
-    public StackNumEle Cond(){
+    public StackElement Cond(){
         return LOrExp();
     }
-    public StackNumEle LOrExp(){
-        StackNumEle tmp1 = LAndExp();
+    public StackElement LOrExp(){
+        StackElement tmp1 = LAndExp();
         while (token==Tokens.OR){
             getSym();
-//            out.println(token);
-            StackNumEle tmp2 = LAndExp();
-//            out.println("OK");
+////            out.println(token);
+            StackElement tmp2 = LAndExp();
+////            out.println("OK");
             String x1 = getNumString(tmp1);
             String x2 = getNumString(tmp2);
             codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = or i1 ").append(x1).append(",").append(x2).append("\n");
             Var tmp_var = new Var("i1");
             tmp_var.setLoad_register(register,block_idx);
-            tmp1 = new StackNumEle(false,tmp_var);
+            tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
             register++;
         }
         return tmp1;
     }
-    public StackNumEle LAndExp(){
-        StackNumEle tmp1 = EqExp();
+    public StackElement LAndExp(){
+        StackElement tmp1 = EqExp();
         while (token==Tokens.AND){
             getSym();
-            StackNumEle tmp2 = EqExp();
+            StackElement tmp2 = EqExp();
             String x1 = getNumString(tmp1);
             String x2 = getNumString(tmp2);
             codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = and i1 ").append(x1).append(",").append(x2).append("\n");
             Var tmp_var = new Var("i1");
             tmp_var.setLoad_register(register,block_idx);
-            tmp1 = new StackNumEle(false,tmp_var);
+            tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
             register++;
         }
         return tmp1;
     }
-    public StackNumEle EqExp(){
+    public StackElement EqExp(){
         if(!isExp()){
             error();
         }
-        StackNumEle tmp1 = RelExp();
+        StackElement tmp1 = RelExp();
         if(token==Tokens.Eq||token==Tokens.NEq){
             Tokens tmp_token = token;
             getSym();
             if(!isExp()){
                 error();
             }
-            StackNumEle tmp2 = Exp(1);
+            StackElement tmp2 = Exp(1);
             String op;
             if(tmp_token==Tokens.Eq){
                 op = "eq";
@@ -188,30 +184,30 @@ public class GrammarAnalyze {
         return tmp1;
     }
 
-    private StackNumEle getCmpResult(StackNumEle tmp1, StackNumEle tmp2, String op) {
+    private StackElement getCmpResult(StackElement tmp1, StackElement tmp2, String op) {
         String x1 = getNumString32(tmp1);
         String x2 = getNumString32(tmp2);
         codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = ").append("icmp ").append(op)
                 .append(" i32 ").append(x1).append(",").append(x2).append("\n");
         Var tmp_var = new Var("i1");
         tmp_var.setLoad_register(register,block_idx);
-        tmp1 = new StackNumEle(false,tmp_var);
+        tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
         register++;
         return tmp1;
     }
 
-    public StackNumEle RelExp(){
+    public StackElement RelExp(){
         if(!isExp()){
             error();
         }
-        StackNumEle tmp1 = Exp(1);
+        StackElement tmp1 = Exp(1);
         if(isCompare()){
             Tokens tmp_token = token;
             getSym();
             if(!isExp()){
                 error();
             }
-            StackNumEle tmp2 = Exp(1);
+            StackElement tmp2 = Exp(1);
             String op;
             switch (tmp_token){
                 case GT:{
@@ -243,7 +239,7 @@ public class GrammarAnalyze {
         if(token==Tokens.RETURN){
             getSym();
             if(isExp()){
-                StackNumEle tmp = Exp(0);
+                StackElement tmp = Exp(0);
                 if(token!=Tokens.Semicolon){
                     error();
                 }
@@ -258,15 +254,27 @@ public class GrammarAnalyze {
         else if(token==Tokens.Ident){
             if(tokens.get(idx_t).getToken()==Tokens.Assign){
                 TokenTrap tmp1 = LVal();
-                Var var = vars.get(tmp1.getIdentName());
-                if(var == null){
+                StackElement stackElement = null;
+                int j;
+                for (j=top_now;j>=0;j--){
+                    StackElement tmp_ele = symbolStack[j];
+                    if(tmp_ele.getName().equals(tmp1.getIdentName())){
+                        if(tmp_ele.getType()!=EleType.Var){
+                            error();
+                        }
+                        stackElement = tmp_ele;
+                        break;
+                    }
+                }
+                if(stackElement==null){
                     error();
                 }
                 getSym();
-                StackNumEle tmp2 = Exp(0);
-                storeRegister(var,tmp2);
-                if (var.getLoad_register(block_idx)!=-1){
-                    loadRegister(var);
+                StackElement tmp2 = Exp(0);
+                assert stackElement != null;
+                storeRegister(stackElement.getVar(),tmp2);
+                if (stackElement.getVar().getLoad_register(block_idx)!=-1){
+                    loadRegister(stackElement.getVar());
                 }
             }
             else{
@@ -286,6 +294,7 @@ public class GrammarAnalyze {
             getSym();
         }
         else if(token==Tokens.LBrace){
+            top_index.push(top_now+1);
             Block();
         }
         else if(token==Tokens.IF){
@@ -294,7 +303,7 @@ public class GrammarAnalyze {
                 error();
             }
             getSym();
-            StackNumEle cond = Cond();
+            StackElement cond = Cond();
             if(token!=Tokens.RPar){
                 error();
             }
@@ -318,7 +327,7 @@ public class GrammarAnalyze {
             if(r1==-1){
                 r1 = block_idx;
             }
-            if(cond.isNumber()){
+            if(cond.getType()==EleType.Number){
                 if (cond.getNum().getType().equals("i32")){
                     codeBlocks.get(l1-1).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(cond.getNum().getNumber()).
                             append(" to i1").append("\n");
@@ -357,21 +366,26 @@ public class GrammarAnalyze {
             error();
         }
     }
-    public StackNumEle ConstInitVal(){
+    public StackElement ConstInitVal(){
         return ConstExp();
     }
     public void ConstDef(){
         TokenTrap tmp1 = Ident();
-        if(consts.get(tmp1.getIdentName())!=null||vars.get(tmp1.getIdentName())!=null){
+        int l,r;
+        l=top_index.peek();
+        r=top_now;
+        for(int i=l;i<=r;i++){
+            StackElement stackElement = symbolStack[i];
+            if(stackElement.getName().equals(tmp1.getIdentName())){
+                error();
+            }
+        }
+        if(token!=Tokens.Assign){
             error();
         }
-        else if(token!=Tokens.Assign){
-            error();
-        }
-
         getSym();
-        StackNumEle tmp2 = ConstInitVal();
-        consts.put(tmp1.getIdentName(), tmp2.getNum());
+        StackElement tmp2 = ConstInitVal();
+        symbolStack[++top_now] = tmp2;
     }
     public void ConstDecl(){
         getSym();
@@ -387,34 +401,39 @@ public class GrammarAnalyze {
         }
         getSym();
     }
-    public StackNumEle InitVal(){
+    public StackElement InitVal(){
         return Exp(0);
     }
     public void VarDef(){
         TokenTrap tmp1 = Ident();
-        if(consts.get(tmp1.getIdentName())!=null||vars.get(tmp1.getIdentName())!=null){
-            error();
+        int l,r;
+        l=top_index.peek();
+        r=top_now;
+        for(int i=l;i<=r;i++){
+            StackElement stackElement = symbolStack[i];
+            if(stackElement.getName().equals(tmp1.getIdentName())){
+                error();
+            }
         }
         //先声明变量
         codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = alloca i32").append("\n");
         Var tmp_var = new Var("i32");
         tmp_var.setTrue_register(register);
-        vars.put(tmp1.getIdentName(),tmp_var);
+        symbolStack[++top_now]=new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
         register++;
         if(token==Tokens.Assign){
             getSym();
-            StackNumEle tmp2 = InitVal();
-////            out.println("OK4");
+            StackElement tmp2 = InitVal();
+//////            out.println("OK4");
             //给变量赋值
             storeRegister(tmp_var,tmp2);
         }
     }
     public void VarDecl(){
         BType();
-////        out.println("---");
+//////        out.println("---");
         VarDef();
         //0次或多次
-
         while (token==Tokens.Comma){
 
             getSym();
@@ -428,13 +447,13 @@ public class GrammarAnalyze {
     public void BlockItem(){
 
         if(token==Tokens.CONST){
-//////            out.println("OK0");
+////////            out.println("OK0");
             ConstDecl();
         }
         else if(token==Tokens.INT){
-//////            out.println("OK2");
+////            out.println("OK2");
             VarDecl();
-////            out.println("OK3");
+//            out.println("OK3");
         }
         else {
             Stmt();
@@ -465,7 +484,7 @@ public class GrammarAnalyze {
                 error();
             }
             else {
-                StackNumEle par = Exp(1);
+                StackElement par = Exp(1);
                 param.append("i32 ").append(getNumString(par));
             }
         }
@@ -475,7 +494,7 @@ public class GrammarAnalyze {
                 error();
             }
             else {
-                StackNumEle par = Exp(1);
+                StackElement par = Exp(1);
                 param.append(", i32 ").append(getNumString(par));
             }
         }
@@ -484,7 +503,7 @@ public class GrammarAnalyze {
                 codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = call i32 @getint(").append(param).append(")").append("\n");
                 Var tmp_var = new Var("i32");
                 tmp_var.setLoad_register(register,block_idx);
-                stackNum.push(new StackNumEle(false,tmp_var));
+                stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                 register++;
                 return 0;
             }
@@ -492,7 +511,7 @@ public class GrammarAnalyze {
                 codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = call i32 @getch(").append(param).append(")").append("\n");
                 Var tmp_var = new Var("i32");
                 tmp_var.setLoad_register(register,block_idx);
-                stackNum.push(new StackNumEle(false,tmp_var));
+                stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                 register++;
                 return 0;
             }
@@ -511,7 +530,7 @@ public class GrammarAnalyze {
         return token==Tokens.Semicolon||token==Tokens.Comma||token==Tokens.Ge||token==Tokens.GT||token==Tokens.Le
                 ||token==Tokens.LT||token==Tokens.Eq||token==Tokens.NEq||token==Tokens.AND||token==Tokens.OR;
     }
-    public StackNumEle Exp(int type){
+    public StackElement Exp(int type){
         int count=1,flag;
         boolean isRead=true;
 //        out.println("EXP-----------");
@@ -525,7 +544,7 @@ public class GrammarAnalyze {
             }
         }
         if(token==Tokens.NUMBER){
-            stackNum.push(new StackNumEle(true,new Num(tokenTrap.getNumber(),"i32")));
+            stackNum.push(new StackElement(EleType.Number,new Num(tokenTrap.getNumber(),"i32"),""));
         }
         else if(token== Tokens.Ident){
             pushIdent();
@@ -545,6 +564,7 @@ public class GrammarAnalyze {
         }
         getSym();
         while (idx_t< tokens.size()&&!ExpOver()){
+//            out.println(token);
             flag=0;
             if(type==1&&isRead){
                 if(token==Tokens.LPar){
@@ -558,13 +578,13 @@ public class GrammarAnalyze {
                 }
             }
             if(token==Tokens.NUMBER){
-                stackNum.push(new StackNumEle(true,new Num(tokenTrap.getNumber(),"i32")));
+                stackNum.push(new StackElement(EleType.Number,new Num(tokenTrap.getNumber(),"i32"),""));
                 getSym();
             }
             else if(token== Tokens.Ident){
                 pushIdent();
                 getSym();
-//                out.println("OK2");
+////                out.println("OK2");
             }
             else if(isFunc()){
                 handleFunc();
@@ -612,18 +632,24 @@ public class GrammarAnalyze {
         }
         return stackNum.pop();
     }
-    public StackNumEle ConstExp(){
+    public StackElement ConstExp(){
 
         if(token==Tokens.NUMBER){
-            stackNum.push(new StackNumEle(true,new Num(tokenTrap.getNumber(),"i32")));
+            stackNum.push(new StackElement(EleType.Number,new Num(tokenTrap.getNumber(),"i32"),""));
         }
         else if(token== Tokens.Ident){
-            Num tmp = consts.get(tokenTrap.getIdentName());
+            StackElement tmp=null;
+            for(int i=top_now;i>=0;i--){
+                if(symbolStack[i].getType()==EleType.Number&& symbolStack[i].getName().equals(tokenTrap.getIdentName())){
+                    tmp = symbolStack[i];
+                    break;
+                }
+            }
             if(tmp == null){
                 error();
             }
-//            out.println(tmp);
-            stackNum.push(new StackNumEle(true,tmp));
+////            out.println(tmp);
+            stackNum.push(tmp);
         }
 //        else if(isFunc()){
 //            handleFunc();
@@ -636,17 +662,23 @@ public class GrammarAnalyze {
         }
         getSym();
         while (idx_t< tokens.size()&&token!=Tokens.Semicolon&&token!=Tokens.Comma){
-//////            out.println(token);
+////////            out.println(token);
             if(token==Tokens.NUMBER){
-                stackNum.push(new StackNumEle(true,new Num(tokenTrap.getNumber(),"i32")));
+                stackNum.push(new StackElement(EleType.Number,new Num(tokenTrap.getNumber(),"i32"),""));
                 getSym();
             }
             else if(token== Tokens.Ident){
-                Num tmp = consts.get(tokenTrap.getIdentName());
+                StackElement tmp=null;
+                for(int i=top_now;i>=0;i--){
+                    if(symbolStack[i].getType()==EleType.Number&& symbolStack[i].getName().equals(tokenTrap.getIdentName())){
+                        tmp = symbolStack[i];
+                        break;
+                    }
+                }
                 if(tmp == null){
                     error();
                 }
-                stackNum.push(new StackNumEle(true,tmp));
+                stackNum.push(tmp);
             }
 //            else if(isFunc()){
 //                handleFunc();
@@ -692,7 +724,7 @@ public class GrammarAnalyze {
         return stackNum.pop();
     }
     private void guiYue() {
-        StackNumEle tmp1;
+        StackElement tmp1;
         String x1,x2;
         switch (stackOp.pop()){
             case BinAdd:{
@@ -727,7 +759,7 @@ public class GrammarAnalyze {
                 }
                 else {
                     tmp1 = stackNum.pop();
-                    if(tmp1.isNumber()){
+                    if(tmp1.getType()==EleType.Number){
                         Num num = tmp1.getNum();
                         num.setNumber(-num.getNumber());
                         stackNum.push(tmp1);
@@ -743,7 +775,7 @@ public class GrammarAnalyze {
                         codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = ").append("sub ").append("i32 0, ").append(x1).append("\n");
                         tmp_var = new Var("i32");
                         tmp_var.setLoad_register(register,block_idx);
-                        stackNum.push(new StackNumEle(false,tmp_var));
+                        stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                         register++;
                     }
                 }
@@ -755,9 +787,9 @@ public class GrammarAnalyze {
                 }
                 else {
                     tmp1 = stackNum.pop();
-                    if(tmp1.isNumber()){
+                    if(tmp1.getType()==EleType.Number){
                         Num num = new Num(tmp1.getNum().getNumber()==0?1:0,"i1");
-                        stackNum.push(new StackNumEle(true,num));
+                        stackNum.push(new StackElement(EleType.Number,num,""));
                     }
                     else {
                         x1 = getNumString(tmp1);
@@ -765,7 +797,7 @@ public class GrammarAnalyze {
                                 .append(tmp1.getVar().getType()).append(" ").append(x1).append(", 0").append("\n");
                         Var tmp_var = new Var("i1");
                         tmp_var.setLoad_register(register,block_idx);
-                        stackNum.push(new StackNumEle(false,tmp_var));
+                        stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                         register++;
                     }
                 }
@@ -776,8 +808,8 @@ public class GrammarAnalyze {
         }
     }
     private void constGuiYue() {
-        StackNumEle tmp1;
-        StackNumEle tmp2;
+        StackElement tmp1;
+        StackElement tmp2;
         switch (stackOp.pop()){
             case BinAdd:{
                 if (stackNum.size()<2){
@@ -861,24 +893,18 @@ public class GrammarAnalyze {
         }
     }
     private void pushIdent() {
-        StackNumEle stackNumEle;
-        Num tmp = consts.get(tokenTrap.getIdentName());
-        if(tmp == null){
-            Var var = vars.get(tokenTrap.getIdentName());
-            if(var==null){
-                error();
+        for(int i=top_now;i>=0;i--){
+            if(symbolStack[i].getName().equals(tokenTrap.getIdentName())){
+                stackNum.push(symbolStack[i]);
+                return;
             }
-            stackNumEle = new StackNumEle(false,var);
         }
-        else {
-            stackNumEle = new StackNumEle(true,tmp);
-        }
-        stackNum.push(stackNumEle);
+        error();
     }
     //从StackNumEle中提取出变量值或寄存器值
-    private String getNumString32(StackNumEle tmp1){
+    private String getNumString32(StackElement tmp1){
         String x1;
-        if (tmp1.isNumber()){
+        if (tmp1.getType()==EleType.Number){
             x1 = ""+tmp1.getNum().getNumber();
         }
         else {
@@ -895,10 +921,10 @@ public class GrammarAnalyze {
         }
         return x1;
     }
-    private String getNumString(StackNumEle tmp1) {
+    private String getNumString(StackElement tmp1) {
         String x1;
         Var var1;
-        if(tmp1.isNumber()){
+        if(tmp1.getType()==EleType.Number){
             x1 = " "+tmp1.getNum().getNumber();
         }
         else {
@@ -912,8 +938,8 @@ public class GrammarAnalyze {
     }
     //规约中的一步操作，根据运算符而略微不同
     private void calBinOp(String op){
-        StackNumEle tmp1;
-        StackNumEle tmp2;
+        StackElement tmp1;
+        StackElement tmp2;
         String x1,x2;
         if (stackNum.size()<2){
             error();
@@ -927,7 +953,7 @@ public class GrammarAnalyze {
                     append("i32 ").append(x2).append(", ").append(x1).append("\n");
             Var tmp_var = new Var("i32");
             tmp_var.setLoad_register(register,block_idx);
-            stackNum.push(new StackNumEle(false,tmp_var));
+            stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
             register++;
         }
     }
@@ -941,7 +967,7 @@ public class GrammarAnalyze {
         register++;
     }
     //中间代码生成系列：为寄存器store一个新的值
-    private void storeRegister(Var var,StackNumEle tmp2){
+    private void storeRegister(Var var, StackElement tmp2){
 
         String x = getNumString(tmp2);
         codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("store i32 ").append(x).append(", ").append(var.getType()).append("* %u").append(var.getTrue_register()).append("\n");
@@ -964,7 +990,7 @@ public class GrammarAnalyze {
         GrammarAnalyze grammarAnalyze = new GrammarAnalyze();
         grammarAnalyze.analyze(args[0]);
         BufferedWriter out = new BufferedWriter(new FileWriter(args[1]));
-////        System.out.println(String.valueOf(grammarAnalyze.result));
+//////        System.out.println(String.valueOf(grammarAnalyze.result));
         ArrayList<CodeBlock> codes = grammarAnalyze.codeBlocks;
         out.write(String.valueOf(codes.get(0).getResult()));
         for(int i=1;i<codes.size();i++){

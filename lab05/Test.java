@@ -1,5 +1,6 @@
 package com.cai.math;
 
+import java.util.ArrayList;
 import java.util.Stack;
 
 import static java.lang.System.out;
@@ -27,7 +28,5 @@ public class Test {
         System.out.println(count);
     }
     public static void main(String[] args) {
-        Test test = new Test();
-        test.fun();
     }
 }
