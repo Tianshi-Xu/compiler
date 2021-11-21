@@ -2,7 +2,7 @@ import java.util.ArrayList;
 
 public class CodeBlock {
     private String register;
-    private StringBuffer result = new StringBuffer();
+    private StringBuffer result;
 
     public CodeBlock(String register, StringBuffer result) {
         this.register = register;
