@@ -1039,7 +1039,14 @@ public class GrammarAnalyze {
     private void storeRegister(Var var, StackElement tmp2){
 
         String x = getNumString(tmp2);
-        codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("store i32 ").append(x).append(", ").append(var.getType()).append("* %u").append(var.getTrue_register()).append("\n");
+        if(var.isGlobal()){
+            codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("store i32 ").append(x).
+                    append(", ").append(var.getType()).append("* @").append(var.getName()).append("\n");
+        }
+        else{
+            codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("store i32 ").append(x).
+                    append(", ").append(var.getType()).append("* %u").append(var.getTrue_register()).append("\n");
+        }
     }
     public boolean isCompare(){
         return token==Tokens.GT ||token==Tokens.Ge||token==Tokens.LT ||token==Tokens.Le;
