@@ -425,6 +425,68 @@ public class GrammarAnalyze {
                 codeBlocks.get(r2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
             }
         }
+        else if(token==Tokens.WHILE){
+            int cond_idx,while_in,while_out;
+            getSym();
+            if(token!=Tokens.LPar){
+                error();
+            }
+            getSym();
+            codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx+1).append("\n");
+            block_idx++;
+            cond_idx = block_idx;
+            codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
+            StackElement cond = Cond();
+            String x1 = getNumString(cond);
+            //while里面
+            block_idx++;
+            while_in = block_idx;
+            codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
+            if(token!=Tokens.RPar){
+                error();
+            }
+            getSym();
+            Stmt();
+            codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("br label %x").append(cond_idx).append("\n");
+            for(int j=cond_idx;j<=block_idx;j++){
+                String tmps = codeBlocks.get(j).getResult().toString();
+                tmps = tmps.replace("$",""+(block_idx+1));
+                tmps = tmps.replace("~",""+cond_idx);
+                codeBlocks.get(j).setResult(new StringBuffer(tmps));
+            }
+            //while外面
+            block_idx++;
+            while_out = block_idx;
+            codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
+            //回填
+            if(cond.getVar().getType().equals("i32")){
+                codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(x1).
+                        append(" to i1").append("\n");
+                codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
+                        append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+                register++;
+            }
+            else {
+                codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1").append(x1).
+                        append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+            }
+        }
+        else if(token==Tokens.Break){
+            getSym();
+            if(token!=Tokens.Semicolon){
+                error();
+            }
+            getSym();
+            codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("br label %x$").append("\n");
+        }
+        else if(token==Tokens.Continue){
+            getSym();
+            if(token!=Tokens.Semicolon){
+                error();
+            }
+            getSym();
+            codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("br label %x~").append("\n");
+        }
         else {
             error();
         }
