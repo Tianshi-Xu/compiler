@@ -2,6 +2,7 @@ public class StackElement {
     private EleType type;
     private Var var;
     private Num num;
+    private Array array;
     private String name;
 
     public StackElement(EleType type, Num num, String name) {
@@ -13,6 +14,12 @@ public class StackElement {
     public StackElement(EleType type, Var var, String name) {
         this.type = type;
         this.var = var;
+        this.name=name;
+    }
+
+    public StackElement(EleType type, Array array, String name) {
+        this.type = type;
+        this.array = array;
         this.name=name;
     }
 
@@ -50,5 +57,13 @@ public class StackElement {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Array getArray() {
+        return array;
+    }
+
+    public void setArray(Array array) {
+        this.array = array;
     }
 }

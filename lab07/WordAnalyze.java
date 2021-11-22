@@ -61,7 +61,7 @@ public class WordAnalyze {
             }
         }
         //搞一手评测数据
-//        System.out.println(chars);
+        System.out.println(chars);
         reader.close();
     }
     //词法分析
@@ -170,6 +170,8 @@ public class WordAnalyze {
                         case ';':tokens.add(new TokenTrap(Tokens.Semicolon));break;
                         case '{':tokens.add(new TokenTrap(Tokens.LBrace));break;
                         case '}':tokens.add(new TokenTrap(Tokens.RBrace));break;
+                        case '[':tokens.add(new TokenTrap(Tokens.LBracket));break;
+                        case ']':tokens.add(new TokenTrap(Tokens.RBracket));break;
                         case '+':{
                             if (tokens.isEmpty()){
                                 error();
