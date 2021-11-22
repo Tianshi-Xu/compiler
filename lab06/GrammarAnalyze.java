@@ -356,6 +356,9 @@ public class GrammarAnalyze {
             }
             getSym();
         }
+        else if(token==Tokens.Semicolon){
+            getSym();
+        }
         else if(token==Tokens.LBrace){
             top_index.push(top_now+1);
             Block();
@@ -459,17 +462,33 @@ public class GrammarAnalyze {
             while_out = block_idx;
             codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
             //回填
-            if(cond.getVar().getType().equals("i32")){
-                codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(x1).
-                        append(" to i1").append("\n");
-                codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
-                        append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
-                register++;
+            if(cond.getType()==EleType.Number){
+                if (cond.getNum().getType().equals("i32")){
+                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(cond.getNum().getNumber()).
+                            append(" to i1").append("\n");
+                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
+                            append(",label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+                    register++;
+                }
+                else {
+                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 ").append(cond.getNum().getNumber()).
+                            append(",label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+                }
             }
-            else {
-                codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1").append(x1).
-                        append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+            else{
+                if(cond.getVar().getType().equals("i32")){
+                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(x1).
+                            append(" to i1").append("\n");
+                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
+                            append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+                    register++;
+                }
+                else {
+                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1").append(x1).
+                            append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+                }
             }
+
         }
         else if(token==Tokens.Break){
             getSym();
@@ -570,7 +589,6 @@ public class GrammarAnalyze {
         getSym();
     }
     public void BlockItem(){
-
         if(token==Tokens.CONST){
 ////////            out.println("OK0");
             ConstDecl();
