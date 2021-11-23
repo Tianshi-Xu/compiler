@@ -2,15 +2,15 @@ import java.util.Arrays;
 
 public class Var {
     //被分配空间寄存器
-    private int true_register;
+    protected int true_register;
     //值被加载出去的寄存器
-    private int[] load_register;
+    protected int[] load_register;
 
-    private final boolean isGlobal;
+    protected final boolean isGlobal;
 
-    private String name;
+    protected String name;
 
-    private String type;
+    protected String type;
     public Var(String type, boolean isGlobal){
         this.type= type;
         load_register=new int[10000];

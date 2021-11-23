@@ -1,3 +1,3 @@
 public enum EleType {
-    Number,Var,Fun,Array
+    ConstVar,Var,Fun,Array,ConstArray,InitArray
 }

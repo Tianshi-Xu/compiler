@@ -2,8 +2,9 @@ public class StackElement {
     private EleType type;
     private Var var;
     private Num num;
-    private Array array;
+    private MyArray myArray;
     private String name;
+    private String[] arrayInits;
 
     public StackElement(EleType type, Num num, String name) {
         this.type = type;
@@ -17,12 +18,17 @@ public class StackElement {
         this.name=name;
     }
 
-    public StackElement(EleType type, Array array, String name) {
+    public StackElement(EleType type, MyArray myArray, String name) {
         this.type = type;
-        this.array = array;
+        this.myArray = myArray;
         this.name=name;
     }
 
+    public StackElement(EleType type, String[] arrayInits, String name) {
+        this.type = type;
+        this.arrayInits = arrayInits;
+        this.name=name;
+    }
     public EleType getType() {
         return type;
     }
@@ -59,11 +65,27 @@ public class StackElement {
         this.name = name;
     }
 
-    public Array getArray() {
-        return array;
+    public MyArray getArray() {
+        return myArray;
     }
 
-    public void setArray(Array array) {
-        this.array = array;
+    public void setArray(MyArray myArray) {
+        this.myArray = myArray;
+    }
+
+    public String[] getArrayInits() {
+        return arrayInits;
+    }
+
+    public void setArrayInits(String[] arrayInits) {
+        this.arrayInits = arrayInits;
+    }
+
+    public MyArray getMyArray() {
+        return myArray;
+    }
+
+    public void setMyArray(MyArray myArray) {
+        this.myArray = myArray;
     }
 }

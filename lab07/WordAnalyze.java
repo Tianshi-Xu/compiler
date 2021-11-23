@@ -61,7 +61,7 @@ public class WordAnalyze {
             }
         }
         //搞一手评测数据
-        System.out.println(chars);
+//        System.out.println(chars);
         reader.close();
     }
     //词法分析
@@ -176,7 +176,7 @@ public class WordAnalyze {
                             if (tokens.isEmpty()){
                                 error();
                             }
-                            else if (tokens.get(tokens.size()-1).getToken()==Tokens.NUMBER||tokens.get(tokens.size()-1).getToken()==Tokens.RPar||tokens.get(tokens.size()-1).getToken()==Tokens.Ident){
+                            else if (tokens.get(tokens.size()-1).getToken()==Tokens.NUMBER||tokens.get(tokens.size()-1).getToken()==Tokens.RPar||tokens.get(tokens.size()-1).getToken()==Tokens.Ident||tokens.get(tokens.size()-1).getToken()==Tokens.RBracket){
                                 tokens.add(new TokenTrap(Tokens.BinAdd));
                             }
                             else {
@@ -188,7 +188,7 @@ public class WordAnalyze {
                             if (tokens.isEmpty()){
                                 error();
                             }
-                            else if (tokens.get(tokens.size()-1).getToken()==Tokens.NUMBER||tokens.get(tokens.size()-1).getToken()==Tokens.RPar||tokens.get(tokens.size()-1).getToken()==Tokens.Ident){
+                            else if (tokens.get(tokens.size()-1).getToken()==Tokens.NUMBER||tokens.get(tokens.size()-1).getToken()==Tokens.RPar||tokens.get(tokens.size()-1).getToken()==Tokens.Ident||tokens.get(tokens.size()-1).getToken()==Tokens.RBracket){
                                 tokens.add(new TokenTrap(Tokens.BinDec));
                             }
                             else {
