@@ -169,8 +169,8 @@ public class GrammarAnalyze {
 //////            out.println(token);
             StackElement tmp2 = LAndExp();
 //////            out.println("OK");
-            String x1 = getNumString(tmp1);
-            String x2 = getNumString(tmp2);
+            String x1 = getNumString1(tmp1);
+            String x2 = getNumString1(tmp2);
             getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = or i1 ").append(x1).append(",").append(x2).append("\n");
             Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register,block_idx);
@@ -184,8 +184,8 @@ public class GrammarAnalyze {
         while (token==Tokens.AND){
             getSym();
             StackElement tmp2 = EqExp();
-            String x1 = getNumString(tmp1);
-            String x2 = getNumString(tmp2);
+            String x1 = getNumString1(tmp1);
+            String x2 = getNumString1(tmp2);
             getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = and i1 ").append(x1).append(",").append(x2).append("\n");
             Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register,block_idx);
@@ -388,8 +388,9 @@ public class GrammarAnalyze {
             }
             if(cond.getType()==EleType.ConstVar){
                 if (cond.getNum().getType().equals("i32")){
-                    codeBlocks.get(l1-1).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(cond.getNum().getNumber()).
-                            append(" to i1").append("\n");
+                    //icmp eq i32 %13, 10
+                    codeBlocks.get(l1-1).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = icmp ne i32 ").append(cond.getNum().getNumber()).
+                            append(", 0").append("\n");
                     codeBlocks.get(l1 - 1).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
                             append(",label %x").append(l1).append(", label %x").append(r1).append("\n");
                     register++;
@@ -405,8 +406,8 @@ public class GrammarAnalyze {
                 String x1 = getNumString(cond);
                 block_idx=tmp_idx;
                 if(cond.getVar().getType().equals("i32")){
-                    codeBlocks.get(l1-1).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(x1).
-                            append(" to i1").append("\n");
+                    codeBlocks.get(l1-1).getResult().append(CompileUtil.TAB).append("%u").append(register).
+                            append(" = icmp ne i32 ").append(x1).append(", 0").append("\n");
                     codeBlocks.get(l1 - 1).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
                             append(",label %x").append(l1).append(", label %x").append(r1).append("\n");
                     register++;
@@ -457,8 +458,8 @@ public class GrammarAnalyze {
             //回填
             if(cond.getType()==EleType.ConstVar){
                 if (cond.getNum().getType().equals("i32")){
-                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(cond.getNum().getNumber()).
-                            append(" to i1").append("\n");
+                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).
+                            append(" = icmp ne i32 ").append(cond.getNum().getNumber()).append(", 0").append("\n");
                     codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
                             append(",label %x").append(while_in).append(", label %x").append(while_out).append("\n");
                     register++;
@@ -470,8 +471,8 @@ public class GrammarAnalyze {
             }
             else{
                 if(cond.getVar().getType().equals("i32")){
-                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(x1).
-                            append(" to i1").append("\n");
+                    codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).
+                            append(" = icmp ne i32 ").append(x1).append(", 0").append("\n");
                     codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
                             append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
                     register++;
@@ -679,7 +680,8 @@ public class GrammarAnalyze {
             register++;
             //%23 = getelementptr [2 x i32],[2 x i32]* %22, i32 0, i32 0
             // call void @memset(i32*  %23,i32 0,i32 16)
-            memset(total, myArray, ret_ele);
+            memset(total, myArray);
+            updateArrayEle(total, myArray, ret_ele);
         }
         tmp_final.setName(tmp1.getIdentName());
         symbolStack[++top_now] = tmp_final;
@@ -810,14 +812,17 @@ public class GrammarAnalyze {
             Var tmp_var = new Var("i32",false);
             tmp_var.setTrue_register(register);
             tmp_final = new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
+            register++;
         }
         else {
             //%1 = alloca [2 x i32]
             getBlock().append(CompileUtil.TAB).append("%u").append(register).
                     append(" = alloca [").append(total).append(" x i32]").append("\n");
             myArray.setTrue_register(register);
+            register++;
+            memset(total, myArray);
         }
-        register++;
+
         //赋值变量,可选
         if(token==Tokens.Assign){
             getSym();
@@ -832,20 +837,19 @@ public class GrammarAnalyze {
             else {
 ////                out.println("OK1");
                 StackElement ret_ele = InitVal(0,0, tmp_final.getArray(), null);
-                memset(total, myArray, ret_ele);
+                updateArrayEle(total, myArray, ret_ele);
             }
         }
         symbolStack[++top_now] = tmp_final;
     }
 
-    private void memset(int total, MyArray myArray, StackElement ret_ele) {
+    private void memset(int total, MyArray myArray) {
         getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = getelementptr [").append(total).
                 append(" x i32],[").append(total).append(" x i32]* %u").
                 append(myArray.getTrue_register()).append(", i32 0, i32 0").append("\n");
         getBlock().append(CompileUtil.TAB).append("call void @memset(i32* %u").append(register).append(" ,i32 0,i32 ").
                 append(4 * total).append(")").append("\n");
         register++;
-        updateArrayEle(total, myArray, ret_ele);
     }
 
     private void updateArrayEle(int total, MyArray myArray, StackElement ret_ele) {
@@ -938,7 +942,7 @@ public class GrammarAnalyze {
         }
         else {
             if(myArray!=null){
-                getBlock().append("@").append(tmp1.getIdentName()).append(" = dso_local constant [").
+                getBlock().append("@").append(tmp1.getIdentName()).append(" = dso_local global [").
                         append(total).append(" x i32] zeroinitializer").append("\n");
             }
             else {
@@ -1530,6 +1534,33 @@ public class GrammarAnalyze {
                 loadRegister(var1);
             }
             x1 = " %u"+var1.getLoad_register(block_idx);
+        }
+        return x1;
+    }
+    private String getNumString1(StackElement tmp){
+        String x1;
+        if(tmp.getType()==EleType.ConstVar){
+            if (tmp.getNum().getType().equals("i32")){
+                codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(tmp.getNum().getNumber()).
+                        append(" to i1").append("\n");
+                x1 = " %u"+register;
+                register++;
+            }
+            else {
+                x1 = " "+tmp.getNum().getNumber();
+            }
+        }
+        else{
+            String x= getNumString(tmp);
+            if(tmp.getVar().getType().equals("i32")){
+                codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(x).
+                        append(" to i1").append("\n");
+                x1 = " %u"+register;
+                register++;
+            }
+            else {
+                x1 = x;
+            }
         }
         return x1;
     }
