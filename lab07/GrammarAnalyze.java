@@ -563,9 +563,10 @@ public class GrammarAnalyze {
                 for(int ii=i+1;ii<tmp_shape.size();ii++){
                     kk*=tmp_shape.get(ii);
                 }
-               while (token==Tokens.Comma){
+                while (token==Tokens.Comma){
                     getSym();
-                    ConstInitVal(i+1,index+kk,myArray,ret_ele);
+                    index+=kk;
+                    ConstInitVal(i+1,index,myArray,ret_ele);
                 }
                 if(token!=Tokens.RBrace){
                     error();
@@ -618,7 +619,8 @@ public class GrammarAnalyze {
                 }
                 while (token==Tokens.Comma){
                     getSym();
-                    InitVal(i+1,index+kk,myArray,ret_ele);
+                    index+=kk;
+                    InitVal(i+1,index,myArray,ret_ele);
                 }
                 if(token!=Tokens.RBrace){
                     error();
@@ -675,10 +677,9 @@ public class GrammarAnalyze {
                     append(" = alloca [").append(total).append(" x i32]").append("\n");
             myArray.setTrue_register(register);
             register++;
+            //%23 = getelementptr [2 x i32],[2 x i32]* %22, i32 0, i32 0
             // call void @memset(i32*  %23,i32 0,i32 16)
-            getBlock().append(CompileUtil.TAB).append("call void @memset(i32* %u").append(register - 1).append(" ,i32 0,i32 ").
-                    append(4 * total).append(")").append("\n");
-            updateArrayEle(total, myArray, ret_ele);
+            memset(total, myArray, ret_ele);
         }
         tmp_final.setName(tmp1.getIdentName());
         symbolStack[++top_now] = tmp_final;
@@ -831,12 +832,20 @@ public class GrammarAnalyze {
             else {
 ////                out.println("OK1");
                 StackElement ret_ele = InitVal(0,0, tmp_final.getArray(), null);
-                getBlock().append(CompileUtil.TAB).append("call void @memset(i32* %u").append(myArray.getTrue_register()).append(" ,i32 0,i32 ").
-                        append(4 * total).append(")").append("\n");
-                updateArrayEle(total, myArray, ret_ele);
+                memset(total, myArray, ret_ele);
             }
         }
         symbolStack[++top_now] = tmp_final;
+    }
+
+    private void memset(int total, MyArray myArray, StackElement ret_ele) {
+        getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = getelementptr [").append(total).
+                append(" x i32],[").append(total).append(" x i32]* %u").
+                append(myArray.getTrue_register()).append(", i32 0, i32 0").append("\n");
+        getBlock().append(CompileUtil.TAB).append("call void @memset(i32* %u").append(register).append(" ,i32 0,i32 ").
+                append(4 * total).append(")").append("\n");
+        register++;
+        updateArrayEle(total, myArray, ret_ele);
     }
 
     private void updateArrayEle(int total, MyArray myArray, StackElement ret_ele) {
@@ -877,15 +886,8 @@ public class GrammarAnalyze {
             myArray = new MyArray(shape.size(),shape,true);
             tmp_final = new StackElement(EleType.Array, myArray,tmp1.getIdentName());
         }
-        //先定义变量
-        if(myArray==null){
-            getBlock().append("@").append(tmp1.getIdentName()).append(" = dso_local global i32 0").append("\n");
-            Var tmp_var = new Var("i32",true);
-            tmp_var.setName(tmp1.getIdentName());
-            tmp_final = new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
-        }
-        symbolStack[++top_now] = tmp_final;
         //赋值变量，可选操作
+
         if(token==Tokens.Assign){
             getSym();
             //非数组
@@ -896,7 +898,7 @@ public class GrammarAnalyze {
                         .append(" = dso_local global i32 ").append(tmp2.getNum().getNumber()).append("\n");
                 Var tmp_var = new Var("i32",true);
                 tmp_var.setName(tmp1.getIdentName());
-                symbolStack[++top_now]=new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
+                tmp_final=new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
             }
             else {
                 StackElement ret_ele;
@@ -910,6 +912,9 @@ public class GrammarAnalyze {
                     String[] arrayInits = ret_ele.getArrayInits();
                     StringBuilder initCode = new StringBuilder();
                     initCode.append("[");
+//                    for(String j:arrayInits){
+//                        out.println(j);
+//                    }
                     if(arrayInits[0]==null){
                         initCode.append("i32 0");
                     }
@@ -936,7 +941,14 @@ public class GrammarAnalyze {
                 getBlock().append("@").append(tmp1.getIdentName()).append(" = dso_local constant [").
                         append(total).append(" x i32] zeroinitializer").append("\n");
             }
+            else {
+                getBlock().append("@").append(tmp1.getIdentName()).append(" = dso_local global i32 0").append("\n");
+                Var tmp_var = new Var("i32",true);
+                tmp_var.setName(tmp1.getIdentName());
+                tmp_final = new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
+            }
         }
+        symbolStack[++top_now] = tmp_final;
     }
     public void VarDecl(boolean isGlo){
         BType();
