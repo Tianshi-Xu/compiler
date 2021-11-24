@@ -11,7 +11,7 @@ import static java.lang.System.*;
  */
 public class WordAnalyze {
     private final ArrayList<TokenTrap> tokens = new ArrayList<>();
-    private final String[] keyWord = {"int","return","main","const","getint","getch","putint","putch","if","else","while","break","continue"};
+    private final String[] keyWord = {"int","return","main","const","getint","getch","putint","putch","if","else","while","break","continue","void"};
     private final ArrayList<Tokens> keyWordList = new ArrayList<>();
     private char ch;
     private final StringBuilder chars = new StringBuilder();
@@ -29,6 +29,7 @@ public class WordAnalyze {
         keyWordList.add(Tokens.WHILE);
         keyWordList.add(Tokens.Break);
         keyWordList.add(Tokens.Continue);
+        keyWordList.add(Tokens.Void);
     }
     //判断是否是字母
     boolean isLetter(char letter)
@@ -61,7 +62,7 @@ public class WordAnalyze {
             }
         }
         //搞一手评测数据
-//        System.out.println(chars);
+        System.out.println(chars);
         reader.close();
     }
     //词法分析
