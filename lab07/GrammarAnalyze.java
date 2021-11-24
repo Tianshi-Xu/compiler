@@ -169,8 +169,8 @@ public class GrammarAnalyze {
 //////            out.println(token);
             StackElement tmp2 = LAndExp();
 //////            out.println("OK");
-            String x1 = getNumString1(tmp1);
-            String x2 = getNumString1(tmp2);
+            String x1 = getNumString1(tmp1,block_idx);
+            String x2 = getNumString1(tmp2,block_idx);
             getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = or i1 ").append(x1).append(",").append(x2).append("\n");
             Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register,block_idx);
@@ -184,8 +184,8 @@ public class GrammarAnalyze {
         while (token==Tokens.AND){
             getSym();
             StackElement tmp2 = EqExp();
-            String x1 = getNumString1(tmp1);
-            String x2 = getNumString1(tmp2);
+            String x1 = getNumString1(tmp1,block_idx);
+            String x2 = getNumString1(tmp2,block_idx);
             getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = and i1 ").append(x1).append(",").append(x2).append("\n");
             Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register,block_idx);
@@ -1537,25 +1537,26 @@ public class GrammarAnalyze {
         }
         return x1;
     }
-    private String getNumString1(StackElement tmp){
+    private String getNumString1(StackElement cond,int block_idx){
         String x1;
-        if(tmp.getType()==EleType.ConstVar){
-            if (tmp.getNum().getType().equals("i32")){
-                codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(tmp.getNum().getNumber()).
-                        append(" to i1").append("\n");
-                x1 = " %u"+register;
+        if(cond.getType()==EleType.ConstVar){
+            if (cond.getNum().getType().equals("i32")){
+                //icmp eq i32 %13, 10
+                codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = icmp ne i32 ").append(cond.getNum().getNumber()).
+                        append(", 0").append("\n");
+                x1=" %u"+register;
                 register++;
             }
             else {
-                x1 = " "+tmp.getNum().getNumber();
+                x1 = " "+cond.getNum().getNumber();
             }
         }
-        else{
-            String x= getNumString(tmp);
-            if(tmp.getVar().getType().equals("i32")){
-                codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = trunc i32 ").append(x).
-                        append(" to i1").append("\n");
-                x1 = " %u"+register;
+        else {
+            String x = getNumString(cond);
+            if(cond.getVar().getType().equals("i32")){
+                codeBlocks.get(block_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).
+                        append(" = icmp ne i32 ").append(x).append(", 0").append("\n");
+                x1=" %u"+register;
                 register++;
             }
             else {

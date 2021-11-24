@@ -142,7 +142,7 @@ x17:
     %u66 = load i32, i32* @ptr
     %u67 = getelementptr [65536 x i32],[65536 x i32]*  @tape, i32 0, i32  %u66
     %u68 = load i32, i32* %u67
-    %u69 = trunc i32  %u68 to i1
+    %u69 = icmp ne i32  %u68, 0
     %u70 = and i1  %u65, %u69
     br i1 %u70,label %x18, label %x27
 
