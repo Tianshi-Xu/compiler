@@ -6,6 +6,10 @@ public class Var {
     //值被加载出去的寄存器
     protected int[] load_register;
 
+    protected int func_register;
+
+    protected boolean isFuncParam=false;
+
     protected final boolean isGlobal;
 
     protected String name;
@@ -39,6 +43,7 @@ public class Var {
         this.load_register[i] = register;
     }
 
+
     public String getType() {
         return type;
     }
@@ -53,5 +58,22 @@ public class Var {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+
+    public boolean isFuncParam() {
+        return isFuncParam;
+    }
+
+    public void setFuncParam(boolean funcParam) {
+        isFuncParam = funcParam;
+    }
+
+    public int getFunc_register() {
+        return func_register;
+    }
+
+    public void setFunc_register(int func_register) {
+        this.func_register = func_register;
     }
 }

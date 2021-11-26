@@ -28,6 +28,6 @@ public class Test {
         System.out.println(count);
     }
     public static void main(String[] args) {
-        String s = "123456789^&$";
+        ArrayList<Integer>  aa = new ArrayList<>();
     }
 }

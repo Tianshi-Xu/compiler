@@ -7,6 +7,7 @@ public class MyArray{
     private boolean isGlobal;
     private String name;
     protected int true_register;
+    private boolean isFuncParam=false;
 
 
     public MyArray(int dimension, ArrayList<Integer> shape,boolean isGlobal) {
@@ -45,5 +46,13 @@ public class MyArray{
 
     public void setTrue_register(int true_register) {
         this.true_register = true_register;
+    }
+
+    public boolean isFuncParam() {
+        return isFuncParam;
+    }
+
+    public void setFuncParam(boolean funcParam) {
+        isFuncParam = funcParam;
     }
 }

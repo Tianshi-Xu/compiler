@@ -20,7 +20,6 @@ public class GrammarAnalyze {
     private int idx_t=0;
     private final int numExp=11;
     private int register=1;
-    private int par_flag_l=0;
     public GrammarAnalyze(){
         //0是小于，1是大于，-1是相等，-2是错误
         priority = new short[][]{
@@ -39,7 +38,9 @@ public class GrammarAnalyze {
         tokens = wordAnalyze.getTokens();
         tokens.add(new TokenTrap(Tokens.END,""));
         codeBlocks.add(new CodeBlock("x0",new StringBuffer()));
-        codeBlocks.get(0).getResult().append("declare i32 @getint()\n" +"declare void @putint(i32)\n"+"declare i32 @getch()\n" +"declare void @putch(i32)\n"+"declare void @memset(i32*, i32, i32)\n");
+        codeBlocks.get(0).getResult().append("declare i32 @getint()\n" +"declare void @putint(i32)\n"
+                +"declare i32 @getch()\n" +"declare void @putch(i32)\n"+"declare void @memset(i32*, i32, i32)\n"
+                +"declare i32 @getarray(i32*)\n" + "declare void @putarray(i32, i32*)\n");
         try {
             CompUnit();
         }
@@ -50,95 +51,202 @@ public class GrammarAnalyze {
     public void CompUnit(){
         getSym();
         top_index.push(top_now+1);
-        while (true){
+        while (token==Tokens.CONST||token==Tokens.INT||token==Tokens.Void){
+//            out.println(token);
             if(token==Tokens.CONST){
                 ConstDecl(true);
             }
             else if(token==Tokens.INT){
-                if(tokens.get(idx_t).getToken()==Tokens.MAIN){
-                    break;
+                if(tokens.get(idx_t+1).getToken()==Tokens.LPar){
+                    FuncDef();
                 }
                 else {
                     VarDecl(true);
                 }
             }
-            else {
-                error();
+            else{
+                FuncDef();
             }
         }
-        FuncDef();
-    }
-    public void FuncDef(){
-
-        FuncType();
-////        out.println(token);
-        IdentMain();
-
-        if(token!=Tokens.LPar){
-            error();
-        }
-        getBlock().append('(');
-        getSym();
-        if(token!=Tokens.RPar){
-            error();
-        }
-        getBlock().append(")");
-        getSym();
-        top_index.push(top_now+1);
-        Block();
         if(token!=Tokens.END){
             error();
         }
     }
-    public void FuncType(){
-        if(token!=Tokens.INT){
+    public void FuncDef(){
+        boolean has_return = FuncType();
+////        out.println(token);
+        if(token==Tokens.MAIN){
+            getSym();
+            getBlock().append("define dso_local i32 @main() {\n");
+            if(token!=Tokens.LPar){
+                error();
+            }
+            getSym();
+            if(token!=Tokens.RPar){
+                error();
+            }
+            getSym();
+            top_index.push(top_now+1);
+////            out.println(token);
+            Block(has_return);
+            getBlock().append("}\n");
+        }
+        else if(token==Tokens.Ident){
+            Func func = new Func(tokenTrap.getIdentName(),null,has_return);
+            getSym();
+            if(token!=Tokens.LPar){
+                error();
+            }
+            getSym();
+            StringBuilder paramString = new StringBuilder();
+            if(token!=Tokens.RPar){
+////                out.println("OK1");
+                ArrayList<StackElement> params = FuncFParams();
+//                out.println("OK2");
+                if(token!=Tokens.RPar){
+                    error();
+                }
+                getSym();
+                func.setParams(params);
+                symbolStack[++top_now] = new StackElement(EleType.Fun,func,func.getName());
+                top_index.push(top_now+1);
+                for(int j=0;j<params.size();j++){
+                    StackElement i=params.get(j);
+                    if(i.getType()==EleType.Var){
+                        paramString.append("i32 %u").append(register);
+                        Var var = new Var("i32",false);
+                        var.setFuncParam(true);
+                        var.setFunc_register(register);
+                        StackElement element = new StackElement(EleType.Var,var,i.getName());
+                        symbolStack[++top_now] = element;
+                        register++;
+                    }
+                    else if(i.getType()==EleType.Array){
+                        paramString.append("i32* %u").append(register);
+                        i.getArray().setTrue_register(register);
+                        i.getArray().setFuncParam(true);
+                        symbolStack[++top_now] = i;
+                        register++;
+                    }
+                    else{
+                        error();
+                    }
+                    if(j!=params.size()-1){
+                        paramString.append(", ");
+                    }
+                }
+            }
+            else {
+                ArrayList<StackElement> params = new ArrayList<>();
+                func.setParams(params);
+                symbolStack[++top_now] = new StackElement(EleType.Fun,func,func.getName());
+                top_index.push(top_now+1);
+                getSym();
+            }
+            getBlock().append("define dso_local ").append(has_return ? "i32" : "void").append(" @").append(func.getName()).append("(").append(paramString).append(") {\n");
+//            out.println("OK1");
+            Block(has_return);
+//            out.println("OK2");
+            if(!has_return){
+                getBlock().append(CompileUtil.TAB).append("ret void\n");
+            }
+            getBlock().append("}\n");
+        }
+        else {
             error();
         }
-        getBlock().append("define dso_local i32 ");
-        getSym();
     }
-    public void IdentMain(){
-        if(token!=Tokens.MAIN){
+    public ArrayList<StackElement> FuncFParams(){
+        ArrayList<StackElement> elements = new ArrayList<>();
+        elements.add(FuncFParam());
+        while (token==Tokens.Comma){
+            getSym();
+            elements.add(FuncFParam());
+        }
+        return elements;
+    }
+    public StackElement FuncFParam(){
+        BType();
+        StackElement element;
+        if(token!=Tokens.Ident){
             error();
         }
-        getBlock().append("@main");
+        String name = tokenTrap.getIdentName();
         getSym();
+//        out.println(token);
+        if(token==Tokens.LBracket){
+            getSym();
+            if(token!=Tokens.RBracket){
+                error();
+            }
+            getSym();
+            MyArray myArray;
+            ArrayList<Integer> shape = new ArrayList<>();
+            shape.add(-1);
+            int i;
+            for(i=1;token==Tokens.LBracket;i++){
+                getSym();
+                StackElement tmpp = ConstExp(new Stack<>(), new Stack<>());
+                shape.add(tmpp.getNum().getNumber());
+                if(token!=Tokens.RBracket){
+                    error();
+                }
+                getSym();
+            }
+
+            myArray = new MyArray(i,shape,false);
+            element = new StackElement(EleType.Array, myArray,name);
+        }
+        else{
+            element = new StackElement(EleType.Var, (Var) null,name);
+        }
+        return element;
     }
-    public void Block(){
+    public boolean FuncType(){
+        Boolean has_return = null;
+        if(token==Tokens.INT){
+            has_return=true;
+        }
+        else if(token==Tokens.Void){
+            has_return=false;
+        }
+        else {
+            error();
+        }
+        getSym();
+        return Boolean.TRUE.equals(has_return);
+    }
+    public void Block(boolean has_return){
+////        out.println(token);
         if(token!=Tokens.LBrace){
             error();
         }
-        if(par_flag_l==0){
-            getBlock().append("{\n");
-            par_flag_l=1;
-        }
         getSym();
-        BlockItem();
+        BlockItem(has_return);
         while (token!=Tokens.RBrace){
 //            out.println(token);
-            BlockItem();
+            BlockItem(has_return);
         }
         top_now = top_index.pop()-1;
-////////        out.println("OK2");
+//////////        out.println("OK2");
 //        if(par_flag_r==0) {
 //            getBlock().append(Util.TAB).append("}");
 //            par_flag_r=1;
 //        }
         getSym();
     }
-    public void BlockItem(){
-//        out.println(token);
+    public void BlockItem(boolean has_return){
+////        out.println(token);
         if(token==Tokens.CONST){
-//////            out.println("OK0");
+////////            out.println("OK0");
             ConstDecl(false);
         }
         else if(token==Tokens.INT){
-//////            out.println("OK2");
+////////            out.println("OK2");
             VarDecl(false);
-////            out.println("OK3");
         }
         else {
-            Stmt();
+            Stmt(has_return);
         }
 
     }
@@ -166,9 +274,9 @@ public class GrammarAnalyze {
         StackElement tmp1 = LAndExp();
         while (token==Tokens.OR){
             getSym();
-//////            out.println(token);
+////////            out.println(token);
             StackElement tmp2 = LAndExp();
-//////            out.println("OK");
+////////            out.println("OK");
             String x1 = getNumString1(tmp1,block_idx);
             String x2 = getNumString1(tmp2,block_idx);
             getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = or i1 ").append(x1).append(",").append(x2).append("\n");
@@ -270,26 +378,34 @@ public class GrammarAnalyze {
         }
         return tmp1;
     }
-    public void Stmt(){
+    public void Stmt(boolean has_return){
         if(token==Tokens.RETURN){
             getSym();
-            if(isExp()){
-                StackElement tmp = Exp(0, new Stack<>(), new Stack<>());
+            if(has_return){
+                if(isExp()){
+                    StackElement tmp = Exp(0, new Stack<>(), new Stack<>());
+                    if(token!=Tokens.Semicolon){
+                        error();
+                    }
+                    String x = getNumString(tmp);
+                    getBlock().append(CompileUtil.TAB).append("ret ").append("i32 ").append(x).append("\n");
+                    getSym();
+                }
+                else {
+                    error();
+                }
+            }
+            else{
                 if(token!=Tokens.Semicolon){
                     error();
                 }
-                String x = getNumString(tmp);
-                getBlock().append(CompileUtil.TAB).append("ret ").append("i32 ").append(x);
                 getSym();
-            }
-            else {
-                error();
             }
         }
         else if(token==Tokens.Ident){
             StackElement tmp=null;
             if(tokens.get(idx_t).getToken()==Tokens.LBracket){
-//                out.println("begin----");
+////                out.println("begin----");
                 for(int i=top_now;i>=0;i--){
                     if(symbolStack[i].getType()==EleType.Array&&symbolStack[i].getName().equals(tokenTrap.getIdentName())){
                         tmp = symbolStack[i];
@@ -354,7 +470,7 @@ public class GrammarAnalyze {
         }
         else if(token==Tokens.LBrace){
             top_index.push(top_now+1);
-            Block();
+            Block(has_return);
         }
         else if(token==Tokens.IF){
             getSym();
@@ -371,14 +487,14 @@ public class GrammarAnalyze {
             block_idx++;
             l1 = block_idx;
             codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
-            Stmt();
+            Stmt(has_return);
             l2 = block_idx;
             if (token==Tokens.ELSE){
                 getSym();
                 block_idx++;
                 r1=block_idx;
                 codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
-                Stmt();
+                Stmt(has_return);
                 r2 = block_idx;
             }
             block_idx++;
@@ -443,7 +559,7 @@ public class GrammarAnalyze {
                 error();
             }
             getSym();
-            Stmt();
+            Stmt(has_return);
             getBlock().append(CompileUtil.TAB).append("br label %x").append(cond_idx).append("\n");
             for(int j=cond_idx;j<=block_idx;j++){
                 String tmps = codeBlocks.get(j).getResult().toString();
@@ -558,7 +674,7 @@ public class GrammarAnalyze {
             getSym();
             if(token!=Tokens.RBrace){
                 ConstInitVal(i+1,index,myArray,ret_ele);
-//                out.println(token);
+////                out.println(token);
                 ArrayList<Integer> tmp_shape = myArray.getShape();
                 int kk=1;
                 for(int ii=i+1;ii<tmp_shape.size();ii++){
@@ -584,9 +700,9 @@ public class GrammarAnalyze {
             if(i!= myArray.getDimension()){
                 error();
             }
-//            out.println("NOO");
+////            out.println("NOO");
             StackElement tmp = ConstExp(new Stack<>(), new Stack<>());
-//            out.println("NOO");
+////            out.println("NOO");
             arrayInits[index] = getNumString32(tmp);
             return ret_ele;
         }
@@ -605,7 +721,7 @@ public class GrammarAnalyze {
             Arrays.fill(ret_ele.getArrayInits(),null);
         }
         String[] arrayInits = ret_ele.getArrayInits();
-////        out.println(token);
+//////        out.println(token);
         if(token==Tokens.LBrace){
             if(i== myArray.getDimension()){
                 error();
@@ -769,7 +885,7 @@ public class GrammarAnalyze {
                 //@a = dso_local constant [3 x i32] [i32 1, i32 2, i32 0]
                 getBlock().append("@").append(tmp1.getIdentName()).append(" = dso_local constant [").
                         append(total).append(" x i32] ").append(initCode).append("\n");
-//                out.println(token);
+////                out.println(token);
             }
         }
         tmp_final.setName(tmp1.getIdentName());
@@ -835,7 +951,7 @@ public class GrammarAnalyze {
                 tmp_final=new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
             }
             else {
-////                out.println("OK1");
+//////                out.println("OK1");
                 StackElement ret_ele = InitVal(0,0, tmp_final.getArray(), null);
                 updateArrayEle(total, myArray, ret_ele);
             }
@@ -917,7 +1033,7 @@ public class GrammarAnalyze {
                     StringBuilder initCode = new StringBuilder();
                     initCode.append("[");
 //                    for(String j:arrayInits){
-//                        out.println(j);
+////                        out.println(j);
 //                    }
                     if(arrayInits[0]==null){
                         initCode.append("i32 0");
@@ -956,7 +1072,7 @@ public class GrammarAnalyze {
     }
     public void VarDecl(boolean isGlo){
         BType();
-////////        out.println("---");
+//////////        out.println("---");
         if(isGlo){
             VarDefGlo();
         }
@@ -992,9 +1108,10 @@ public class GrammarAnalyze {
         return token == Tokens.LPar || token == Tokens.UnaryOpAdd || token == Tokens.UnaryOpDec || token == Tokens.NUMBER || token == Tokens.Ident||token==Tokens.NOT||isFunc();
     }
     public boolean isFunc(){
-        return token==Tokens.Getch||token==Tokens.Getint||token==Tokens.Putch||token==Tokens.Putint;
+        return token==Tokens.Getch||token==Tokens.Getint||token==Tokens.Putch||token==Tokens.Putint||
+                token==Tokens.Putarray||token==Tokens.Getarray;
     }
-    public int handleFunc(Stack<StackElement> stackNum,Stack<Tokens> stackOp){
+    public boolean handleFunc(Stack<StackElement> stackNum,Stack<Tokens> stackOp){
         Tokens tmp_token = token;
         StringBuilder param = new StringBuilder();
         getSym();
@@ -1006,53 +1123,164 @@ public class GrammarAnalyze {
             if(token!=Tokens.RPar){
                 error();
             }
+            String fun_name = tmp_token==Tokens.Getint?"getint":"getch";
+            getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = call i32 @").append(fun_name).
+                    append("(").append(param).append(")").append("\n");
+            Var tmp_var = new Var("i32",false);
+            tmp_var.setLoad_register(register,block_idx);
+            stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
+            register++;
+            return true;
         }
         else if(tmp_token==Tokens.Putch||tmp_token==Tokens.Putint){
             if(token==Tokens.RPar){
                 error();
             }
             else {
+                String fun_name = tmp_token==Tokens.Putint?"putint":"putch";
                 StackElement par = Exp(1, new Stack<>(), new Stack<>());
                 param.append("i32 ").append(getNumString(par));
+                getBlock().append(CompileUtil.TAB).append("call void @").append(fun_name).
+                        append("(").append(param).append(")").append("\n");
+                if(token!=Tokens.RPar){
+                    error();
+                }
             }
+            return false;
         }
-        while (token!=Tokens.RPar){
-            error();
-            if(token!=Tokens.Semicolon){
+        else if(tmp_token==Tokens.Getarray){
+            if(token==Tokens.RPar){
                 error();
             }
             else {
                 StackElement par = Exp(1, new Stack<>(), new Stack<>());
-                param.append(", i32 ").append(getNumString(par));
-            }
-        }
-        switch (tmp_token){
-            case Getint:{
-                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = call i32 @getint(").append(param).append(")").append("\n");
+                if(par.getType()!=EleType.Array){
+                    error();
+                }
+                MyArray array = par.getArray();
+                if(array.getDimension()!=1){
+                    error();
+                }
+                param.append("i32* ").append(getNumString(par));
+                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = call i32 @getarray").
+                        append("(").append(param).append(")").append("\n");
                 Var tmp_var = new Var("i32",false);
                 tmp_var.setLoad_register(register,block_idx);
                 stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
                 register++;
-                return 0;
+                if(token!=Tokens.RPar){
+                    error();
+                }
+//                return 1;
             }
-            case Getch:{
-                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = call i32 @getch(").append(param).append(")").append("\n");
-                Var tmp_var = new Var("i32",false);
-                tmp_var.setLoad_register(register,block_idx);
-                stackNum.push(new StackElement(EleType.Var,tmp_var,""+register));
-                register++;
-                return 0;
-            }
-            case Putint:{
-                getBlock().append(CompileUtil.TAB).append("call void @putint(").append(param).append(")").append("\n");
-                return 1;
-            }
-            case Putch:{
-                getBlock().append(CompileUtil.TAB).append("call void @putch(").append(param).append(")").append("\n");
-                return 1;
-            }
-            default:error();return -1;
+            return true;
         }
+        else if(tmp_token==Tokens.Putarray){
+            if(token==Tokens.RPar){
+                error();
+            }
+            else {
+                StackElement par1 = Exp(0, new Stack<>(), new Stack<>());
+                if(token!=Tokens.Comma){
+                    error();
+                }
+                else if(par1.getType()==EleType.Array||par1.getType()==EleType.ConstArray){
+                    error();
+                }
+                getSym();
+                StackElement par2 = Exp(1, new Stack<>(), new Stack<>());
+                if(par2.getType()!=EleType.Array){
+                    error();
+                }
+                MyArray array = par2.getArray();
+                if(array.getDimension()!=1){
+                    error();
+                }
+                //call void @putarray(i32 %29, i32* %33)
+                param.append("i32 ").append(getNumString(par1)).append(", i32* ").append(getNumString(par2));
+                getBlock().append(CompileUtil.TAB).append("call void @putarray").
+                        append("(").append(param).append(")").append("\n");
+                if(token!=Tokens.RPar){
+                    error();
+                }
+
+            }
+            return false;
+        }
+        else {
+            error();
+            return false;
+        }
+    }
+    public StackElement handleIdentFunc(Stack<StackElement> stackNum,Stack<Tokens> stackOp,Func func){
+        boolean has_return = func.isHas_return();
+        if(token!=Tokens.LPar){
+            error();
+        }
+        getSym();
+        ArrayList<StackElement> params;
+        StringBuilder paramString = new StringBuilder();
+        if(token!=Tokens.RPar){
+            params = FuncRParams();
+            if(params.size()!=func.getParams().size()){
+                error();
+            }
+            else if(token!=Tokens.RPar){
+                error();
+            }
+            for(int j=0;j<params.size();j++){
+                StackElement RElement=params.get(j);
+                if(RElement.getType()==EleType.Var){
+                    String x = getNumString(RElement);
+                    paramString.append("i32 ").append(x);
+                }
+                else if(RElement.getType()==EleType.Array){
+                    MyArray RArray = RElement.getArray();
+                    ArrayList<Integer> RShape = RArray.getShape();
+                    ArrayList<Integer> XShape = func.getParams().get(j).getArray().getShape();
+                    if(RArray.getDimension()!= XShape.size()){
+                        error();
+                    }
+                    for(int k=1;k<RShape.size();k++){
+                        if(!RShape.get(k).equals(XShape.get(k))){
+                            error();
+                        }
+                    }
+
+                    paramString.append("i32* ").append(getNumString(RElement));
+                }
+                else{
+                    error();
+                }
+                if(j!=params.size()-1){
+                    paramString.append(", ");
+                }
+            }
+        }
+        if(has_return){
+            //%2 = call i32 @func1()
+            getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = ").append("call i32 @").
+                    append(func.getName()).append("(").append(paramString).append(")").append("\n");
+            Var var = new Var("i32",false);
+            var.setLoad_register(register,block_idx);
+            StackElement ret = new StackElement(EleType.Var,var,""+register);
+            register++;
+            return ret;
+        }
+        else{
+            getBlock().append(CompileUtil.TAB).append("call void @").append(func.getName()).
+                    append("(").append(paramString).append(")").append("\n");
+            return null;
+        }
+    }
+    public ArrayList<StackElement> FuncRParams(){
+        ArrayList<StackElement> elements = new ArrayList<>();
+        elements.add(Exp(1,new Stack<>(),new Stack<>()));
+        while (token==Tokens.Comma){
+            getSym();
+            elements.add(Exp(1,new Stack<>(),new Stack<>()));
+        }
+        return elements;
     }
     public boolean ExpOver(){
         return token==Tokens.Semicolon||token==Tokens.Comma||token==Tokens.Ge||token==Tokens.GT||token==Tokens.Le
@@ -1061,8 +1289,8 @@ public class GrammarAnalyze {
     public StackElement Exp(int type,Stack<StackElement> stackNum,Stack<Tokens> stackOp){
         int count=1,flag;
         boolean isRead=true;
-//        out.println("EXP-----------");
-//        out.println(token);
+////        out.println("EXP-----------");
+////        out.println(token);
         if(type==1){
             if(token==Tokens.LPar){
                 count=count+1;
@@ -1075,11 +1303,20 @@ public class GrammarAnalyze {
             stackNum.push(new StackElement(EleType.ConstVar,new Num(tokenTrap.getNumber(),"i32"),""));
         }
         else if(token== Tokens.Ident){
-            pushIdent(stackNum,stackOp);
+            if(tokens.get(idx_t).getToken()==Tokens.LPar){
+                boolean has_ret = pushFuncIdent(stackNum,stackOp);
+                if(!has_ret){
+                    getSym();
+                    return null;
+                }
+            }
+            else{
+                pushIdent(stackNum,stackOp);
+            }
         }
         else if(isFunc()){
-            int x = handleFunc(stackNum,stackOp);
-            if(x==1){
+            boolean has_ret = handleFunc(stackNum,stackOp);
+            if(!has_ret){
                 getSym();
                 return null;
             }
@@ -1091,9 +1328,10 @@ public class GrammarAnalyze {
             stackOp.push(token);
         }
         getSym();
+//        out.println(token);
         while (idx_t< tokens.size()&&!ExpOver()){
-////            out.println("!!!!!!");
-//            out.println(token);
+//////            out.println("!!!!!!");
+////            out.println(token);
             flag=0;
             if(type==1&&isRead){
                 if(token==Tokens.LPar){
@@ -1112,12 +1350,17 @@ public class GrammarAnalyze {
                 getSym();
             }
             else if(token== Tokens.Ident){
-                pushIdent(stackNum,stackOp);
+                if(tokens.get(idx_t).getToken()==Tokens.LPar){
+                    pushFuncIdent(stackNum,stackOp);
+                }
+                else{
+                    pushIdent(stackNum,stackOp);
+                }
                 getSym();
-//////                out.println("OK2");
             }
             else if(isFunc()){
                 handleFunc(stackNum,stackOp);
+                getSym();
             }
             else if(token.ordinal()>numExp){
                 error();
@@ -1158,9 +1401,11 @@ public class GrammarAnalyze {
         while (!stackOp.empty()){
             guiYue(stackNum,stackOp);
         }
+//        out.println(stackNum.size());
         if (stackNum.size()!=1){
             error();
         }
+
         return stackNum.pop();
     }
     public StackElement ConstExp(Stack<StackElement> stackNum,Stack<Tokens> stackOp){
@@ -1181,7 +1426,7 @@ public class GrammarAnalyze {
         }
         getSym();
         while (idx_t< tokens.size()&&token!=Tokens.Semicolon&&token!=Tokens.Comma&&token!=Tokens.RBracket&&token!=Tokens.RBrace){
-////            out.println(token);
+//////            out.println(token);
             if(token==Tokens.NUMBER){
                 stackNum.push(new StackElement(EleType.ConstVar,new Num(tokenTrap.getNumber(),"i32"),""));
                 getSym();
@@ -1268,7 +1513,10 @@ public class GrammarAnalyze {
                 }
                 else {
                     tmp1 = stackNum.pop();
-                    if(tmp1.getType()==EleType.ConstVar){
+                    if(tmp1.getType()==EleType.Array){
+                        error();
+                    }
+                    else if(tmp1.getType()==EleType.ConstVar){
                         Num num = tmp1.getNum();
                         num.setNumber(-num.getNumber());
                         stackNum.push(tmp1);
@@ -1296,7 +1544,10 @@ public class GrammarAnalyze {
                 }
                 else {
                     tmp1 = stackNum.pop();
-                    if(tmp1.getType()==EleType.ConstVar){
+                    if(tmp1.getType()==EleType.Array){
+                        error();
+                    }
+                    else if(tmp1.getType()==EleType.ConstVar){
                         Num num = new Num(tmp1.getNum().getNumber()==0?1:0,"i1");
                         stackNum.push(new StackElement(EleType.ConstVar,num,""));
                     }
@@ -1410,13 +1661,73 @@ public class GrammarAnalyze {
             }
         }
         tmp = getArrayElement2(tmp);
-//////            out.println(tmp);
+////////            out.println(tmp);
         stackNum.push(tmp);
     }
-
+    private boolean pushFuncIdent(Stack<StackElement> stackNum,Stack<Tokens> stackOp) {
+        StackElement tmp=null;
+        for(int i=top_now;i>=0;i--){
+            if(symbolStack[i].getName().equals(tokenTrap.getIdentName())&&symbolStack[i].getType()==EleType.Fun){
+                tmp = symbolStack[i];
+                break;
+            }
+        }
+        if(tmp==null){
+            error();
+        }
+        getSym();
+        assert tmp != null;
+        Func func = tmp.getFunc();
+        StackElement ret_ele = handleIdentFunc(stackNum,stackOp,func);
+        if(func.isHas_return()){
+            stackNum.push(ret_ele);
+        }
+        return func.isHas_return();
+    }
     private StackElement getArrayElement(StackElement tmp, int dimen, int i, ArrayList<Integer> shape, String[] location) {
         if(i!=dimen){
-            error();
+            String x1,x2;
+            ArrayList<Integer> myShape = new ArrayList<>();
+            x1 = "0";
+            for(int j=0;j<i;j++){
+                Integer mul=1;
+                for(int k=j+1;k<dimen;k++){
+                    mul*=shape.get(k);
+                }
+                x2 = location[j];
+                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = mul i32 ").
+                        append(x2).append(", ").append(mul).append("\n");
+                register++;
+                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = add i32 ").
+                        append(x1).append(", %u").append(register-1).append("\n");
+                x1 = "%u"+register;
+                register++;
+            }
+            for(int j=i;j<dimen;j++){
+                myShape.add(shape.get(j));
+            }
+            Integer mul=1;
+            for(int k=0;k<dimen;k++){
+                mul*=shape.get(k);
+            }
+            // %13 = getelementptr i32,i32* %11, i32 %12
+            //    %14 = load i32, i32* %13
+            String array_address = getNumString(tmp);
+            if(tmp.getArray().isFuncParam()){
+                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = getelementptr i32, i32* ").
+                        append(array_address).append(", i32 ").append(x1).append("\n");
+            }
+            else{
+                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = getelementptr [").append(mul).
+                        append(" x i32],[").append(mul).append(" x i32]* ").
+                        append(array_address).append(", i32 0, i32 ").append(x1).append("\n");
+            }
+            register++;
+            MyArray myArray = new MyArray(dimen-i,myShape,false);
+            myArray.setTrue_register(register-1);
+            StackElement element = new StackElement(EleType.Array,myArray,tmp.getName());
+            idx_t--;
+            return element;
         }
         else {
             String x1,x2;
@@ -1437,19 +1748,25 @@ public class GrammarAnalyze {
             // %13 = getelementptr i32,i32* %11, i32 %12
             //    %14 = load i32, i32* %13
             String array_address = getNumString(tmp);
-            getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = getelementptr [").append(mul).
-                    append(" x i32],[").append(mul).append(" x i32]* ").
-                    append(array_address).append(", i32 0, i32 ").append(x1).append("\n");
+            if(tmp.getArray().isFuncParam()){
+                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = getelementptr i32, i32* ").
+                        append(array_address).append(", i32 ").append(x1).append("\n");
+            }
+            else{
+                getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = getelementptr [").append(mul).
+                        append(" x i32],[").append(mul).append(" x i32]* ").
+                        append(array_address).append(", i32 0, i32 ").append(x1).append("\n");
+            }
             register++;
             getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = load i32, i32* %u").append(register - 1).append("\n");
             register++;
+            Var varr = new Var("i32",false);
+            varr.setLoad_register(register-1,block_idx);
+            varr.setTrue_register(register-2);
+            tmp = new StackElement(EleType.Var,varr,""+(register-1));
+            idx_t--;
+            return tmp;
         }
-        Var varr = new Var("i32",false);
-        varr.setLoad_register(register-1,block_idx);
-        varr.setTrue_register(register-2);
-        tmp = new StackElement(EleType.Var,varr,""+(register-1));
-        idx_t--;
-        return tmp;
     }
 
     private void pushConstIdent(Stack<StackElement> stackNum,Stack<Tokens> stackOp){
@@ -1481,7 +1798,7 @@ public class GrammarAnalyze {
             }
             tmp = getArrayElement(tmp, dimen, i, shape, location);
         }
-//////            out.println(tmp);
+////////            out.println(tmp);
         stackNum.push(tmp);
     }
     //从StackNumEle中提取出变量值或寄存器值
@@ -1507,14 +1824,14 @@ public class GrammarAnalyze {
                 x1 = " %u"+register;
                 register++;
             }
-            else {
-                    x1 = " %u"+var.getLoad_register(block_idx);
-            }
+//            else {
+//                    x1 = " %u"+var.getLoad_register(block_idx);
+//            }
         }
         return x1;
     }
     private String getNumString(StackElement tmp1) {
-        String x1;
+        String x1="";
         Var var1;
         if(tmp1.getType()==EleType.ConstVar){
             x1 = " "+tmp1.getNum().getNumber();
@@ -1530,10 +1847,16 @@ public class GrammarAnalyze {
         }
         else {
             var1 = tmp1.getVar();
-            if (var1.getLoad_register(block_idx)==-1){
-                loadRegister(var1);
+            if(var1.isFuncParam()){
+                x1 = " %u"+var1.getFunc_register();
             }
-            x1 = " %u"+var1.getLoad_register(block_idx);
+            else if (var1.getLoad_register(block_idx)==-1){
+                loadRegister(var1);
+                x1 = " %u"+var1.getLoad_register(block_idx);
+            }
+            else {
+                x1 = " %u"+var1.getLoad_register(block_idx);
+            }
         }
         return x1;
     }
@@ -1576,6 +1899,10 @@ public class GrammarAnalyze {
         else {
             tmp1 = stackNum.pop();
             tmp2 = stackNum.pop();
+            if(tmp1.getType()==EleType.Array||tmp2.getType()==EleType.Array){
+                error();
+            }
+////            out.println("OK:"+tmp1.getVar().getLoad_register(block_idx));
             x1 = getNumString(tmp1);
             x2 = getNumString(tmp2);
             getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = ").append(op).append(" ").
@@ -1648,7 +1975,7 @@ public class GrammarAnalyze {
         GrammarAnalyze grammarAnalyze = new GrammarAnalyze();
         grammarAnalyze.analyze(args[0]);
         BufferedWriter out = new BufferedWriter(new FileWriter(args[1]));
-////        System.out.println(String.valueOf(grammarAnalyze.result));
+//////        System.out.println(String.valueOf(grammarAnalyze.result));
         ArrayList<CodeBlock> codes = grammarAnalyze.codeBlocks;
         out.write(String.valueOf(codes.get(0).getResult()));
         for(int i=1;i<codes.size();i++){
@@ -1656,7 +1983,6 @@ public class GrammarAnalyze {
             out.write("\n"+codeBlock.getRegister()+":\n");
             out.write(String.valueOf(codeBlock.getResult()));
         }
-        out.write("\n}");
 
         out.close();
     }
