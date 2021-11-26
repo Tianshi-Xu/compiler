@@ -510,7 +510,10 @@ public class GrammarAnalyze {
             }
 //            if(token!=Tokens.RBrace){
 //            }
-
+            if(i1!=1&&i2!=1) {
+                block_idx++;
+                codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
+            }
             if(r1==-1){
                 r1 = block_idx;
             }
@@ -545,15 +548,12 @@ public class GrammarAnalyze {
                             append(", label %x").append(l1).append(", label %x").append(r1).append("\n");
                 }
             }
-
-//            if(i1!=1&&i2!=1) {
-                block_idx++;
-                codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
+            if(i1!=1&&i2!=1) {
                 codeBlocks.get(l2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
                 if (r2 != -1) {
                     codeBlocks.get(r2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
                 }
-//            }
+            }
         }
         else if(token==Tokens.WHILE){
             int cond_idx,while_in,while_out;
