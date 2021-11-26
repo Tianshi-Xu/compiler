@@ -98,6 +98,8 @@ public class GrammarAnalyze {
             }
             getSym();
             StringBuilder paramString = new StringBuilder();
+            ArrayList<String> varNames = new ArrayList<>();
+            ArrayList<String> TVarNames = new ArrayList<>();
             if(token!=Tokens.RPar){
 ////                out.println("OK1");
                 ArrayList<StackElement> params = FuncFParams();
@@ -109,16 +111,14 @@ public class GrammarAnalyze {
                 func.setParams(params);
                 symbolStack[++top_now] = new StackElement(EleType.Fun,func,func.getName());
                 top_index.push(top_now+1);
+
                 for(int j=0;j<params.size();j++){
                     StackElement i=params.get(j);
                     if(i.getType()==EleType.Var){
                         paramString.append("i32 %u").append(register);
-                        Var var = new Var("i32",false);
-                        var.setFuncParam(true);
-                        var.setFunc_register(register);
-                        StackElement element = new StackElement(EleType.Var,var,i.getName());
-                        symbolStack[++top_now] = element;
+                        TVarNames.add("%u"+register);
                         register++;
+                        varNames.add(i.getName());
                     }
                     else if(i.getType()==EleType.Array){
                         paramString.append("i32* %u").append(register);
@@ -143,6 +143,14 @@ public class GrammarAnalyze {
                 getSym();
             }
             getBlock().append("define dso_local ").append(has_return ? "i32" : "void").append(" @").append(func.getName()).append("(").append(paramString).append(") {\n");
+//            out.println("OK1");
+            for(int i=0;i<varNames.size();i++){
+                String s=varNames.get(i);
+                String t = TVarNames.get(i);
+                defineVar(s);
+                getBlock().append(CompileUtil.TAB).append("store i32 ").append(t).
+                        append(", i32").append("* %u").append(register-1).append("\n");
+            }
 //            out.println("OK1");
             Block(has_return);
 //            out.println("OK2");
@@ -235,7 +243,7 @@ public class GrammarAnalyze {
         getSym();
     }
     public void BlockItem(boolean has_return){
-////        out.println(token);
+//        out.println(token);
         if(token==Tokens.CONST){
 ////////            out.println("OK0");
             ConstDecl(false);
@@ -496,8 +504,11 @@ public class GrammarAnalyze {
                 Stmt(has_return);
                 r2 = block_idx;
             }
-            block_idx++;
-            codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
+            if(token!=Tokens.RBrace){
+                block_idx++;
+                codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
+            }
+
             if(r1==-1){
                 r1 = block_idx;
             }
@@ -507,12 +518,12 @@ public class GrammarAnalyze {
                     codeBlocks.get(l1-1).getResult().append(CompileUtil.TAB).append("%u").append(register).append(" = icmp ne i32 ").append(cond.getNum().getNumber()).
                             append(", 0").append("\n");
                     codeBlocks.get(l1 - 1).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
-                            append(",label %x").append(l1).append(", label %x").append(r1).append("\n");
+                            append(", label %x").append(l1).append(", label %x").append(r1).append("\n");
                     register++;
                 }
                 else {
                     codeBlocks.get(l1 - 1).getResult().append(CompileUtil.TAB).append("br i1 ").append(cond.getNum().getNumber()).
-                            append(",label %x").append(l1).append(", label %x").append(r1).append("\n");
+                            append(", label %x").append(l1).append(", label %x").append(r1).append("\n");
                 }
             }
             else {
@@ -524,17 +535,19 @@ public class GrammarAnalyze {
                     codeBlocks.get(l1-1).getResult().append(CompileUtil.TAB).append("%u").append(register).
                             append(" = icmp ne i32 ").append(x1).append(", 0").append("\n");
                     codeBlocks.get(l1 - 1).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
-                            append(",label %x").append(l1).append(", label %x").append(r1).append("\n");
+                            append(", label %x").append(l1).append(", label %x").append(r1).append("\n");
                     register++;
                 }
                 else {
                     codeBlocks.get(l1 - 1).getResult().append(CompileUtil.TAB).append("br i1").append(x1).
-                            append(",label %x").append(l1).append(", label %x").append(r1).append("\n");
+                            append(", label %x").append(l1).append(", label %x").append(r1).append("\n");
                 }
             }
-            codeBlocks.get(l2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
-            if(r2!=-1){
-                codeBlocks.get(r2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
+            if(token!=Tokens.RBrace) {
+                codeBlocks.get(l2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
+                if (r2 != -1) {
+                    codeBlocks.get(r2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
+                }
             }
         }
         else if(token==Tokens.WHILE){
@@ -576,12 +589,12 @@ public class GrammarAnalyze {
                     codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("%u").append(register).
                             append(" = icmp ne i32 ").append(cond.getNum().getNumber()).append(", 0").append("\n");
                     codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 %u").append(register).
-                            append(",label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+                            append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
                     register++;
                 }
                 else {
                     codeBlocks.get(cond_idx).getResult().append(CompileUtil.TAB).append("br i1 ").append(cond.getNum().getNumber()).
-                            append(",label %x").append(while_in).append(", label %x").append(while_out).append("\n");
+                            append(", label %x").append(while_in).append(", label %x").append(while_out).append("\n");
                 }
             }
             else{
@@ -943,7 +956,7 @@ public class GrammarAnalyze {
             getSym();
             //非数组
             if (myArray==null){
-                Var tmp_var = defineVar(tmp1);
+                Var tmp_var = defineVar(tmp1.getIdentName());
                 StackElement tmp2 = InitVal(0,0,null,null);
                 //给变量赋值
                 storeRegister(tmp_var,tmp2);
@@ -1094,11 +1107,11 @@ public class GrammarAnalyze {
         getSym();
     }
 
-    private Var defineVar(TokenTrap tmp1) {
+    private Var defineVar(String name) {
         getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = alloca i32").append("\n");
         Var tmp_var = new Var("i32",false);
         tmp_var.setTrue_register(register);
-        symbolStack[++top_now]=new StackElement(EleType.Var,tmp_var,tmp1.getIdentName());
+        symbolStack[++top_now]=new StackElement(EleType.Var,tmp_var,name);
         register++;
         return tmp_var;
     }
@@ -1850,10 +1863,7 @@ public class GrammarAnalyze {
         }
         else {
             var1 = tmp1.getVar();
-            if(var1.isFuncParam()){
-                x1 = " %u"+var1.getFunc_register();
-            }
-            else if (var1.getLoad_register(block_idx)==-1){
+            if (var1.getLoad_register(block_idx)==-1||var1.isGlobal()){
                 loadRegister(var1);
                 x1 = " %u"+var1.getLoad_register(block_idx);
             }
