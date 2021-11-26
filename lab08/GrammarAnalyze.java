@@ -223,16 +223,17 @@ public class GrammarAnalyze {
         getSym();
         return Boolean.TRUE.equals(has_return);
     }
-    public void Block(boolean has_return){
+    public int Block(boolean has_return){
 ////        out.println(token);
         if(token!=Tokens.LBrace){
             error();
         }
         getSym();
-        BlockItem(has_return);
+        int i;
+        i=BlockItem(has_return);
         while (token!=Tokens.RBrace){
 //            out.println(token);
-            BlockItem(has_return);
+            i=BlockItem(has_return);
         }
         top_now = top_index.pop()-1;
 //////////        out.println("OK2");
@@ -241,8 +242,9 @@ public class GrammarAnalyze {
 //            par_flag_r=1;
 //        }
         getSym();
+        return i;
     }
-    public void BlockItem(boolean has_return){
+    public int BlockItem(boolean has_return){
 //        out.println(token);
         if(token==Tokens.CONST){
 ////////            out.println("OK0");
@@ -253,9 +255,9 @@ public class GrammarAnalyze {
             VarDecl(false);
         }
         else {
-            Stmt(has_return);
+            return Stmt(has_return);
         }
-
+        return 0;
     }
     public TokenTrap Ident(){
         TokenTrap tmp = new TokenTrap(tokenTrap);
@@ -385,7 +387,7 @@ public class GrammarAnalyze {
         }
         return tmp1;
     }
-    public void Stmt(boolean has_return){
+    public int Stmt(boolean has_return){
         if(token==Tokens.RETURN){
             getSym();
             if(has_return){
@@ -408,6 +410,7 @@ public class GrammarAnalyze {
                 }
                 getSym();
             }
+            return 1;
         }
         else if(token==Tokens.Ident){
             StackElement tmp=null;
@@ -477,7 +480,7 @@ public class GrammarAnalyze {
         }
         else if(token==Tokens.LBrace){
             top_index.push(top_now+1);
-            Block(has_return);
+            return Block(has_return);
         }
         else if(token==Tokens.IF){
             getSym();
@@ -490,24 +493,23 @@ public class GrammarAnalyze {
                 error();
             }
             getSym();
-            int l1,l2,r1=-1,r2=-1;
+            int l1,l2,r1=-1,r2=-1,i1=0,i2=0;
             block_idx++;
             l1 = block_idx;
             codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
-            Stmt(has_return);
+            i1=Stmt(has_return);
+//            out.println(i1);
             l2 = block_idx;
             if (token==Tokens.ELSE){
                 getSym();
                 block_idx++;
                 r1=block_idx;
                 codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
-                Stmt(has_return);
+                i2=Stmt(has_return);
                 r2 = block_idx;
             }
-            if(token!=Tokens.RBrace){
-                block_idx++;
-                codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
-            }
+//            if(token!=Tokens.RBrace){
+//            }
 
             if(r1==-1){
                 r1 = block_idx;
@@ -543,7 +545,10 @@ public class GrammarAnalyze {
                             append(", label %x").append(l1).append(", label %x").append(r1).append("\n");
                 }
             }
-            if(token!=Tokens.RBrace) {
+
+            if(i1!=1&&i2!=1) {
+                block_idx++;
+                codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
                 codeBlocks.get(l2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
                 if (r2 != -1) {
                     codeBlocks.get(r2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
@@ -631,6 +636,7 @@ public class GrammarAnalyze {
         else {
             error();
         }
+        return 0;
     }
 
     private StackElement getArrayElement2(StackElement tmp) {

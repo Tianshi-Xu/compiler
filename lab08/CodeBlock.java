@@ -24,4 +24,7 @@ public class CodeBlock {
     public void setResult(StringBuffer result) {
         this.result = result;
     }
+
+    public void setResult(String s) {
+    }
 }
