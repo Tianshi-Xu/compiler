@@ -409,6 +409,7 @@ public class GrammarAnalyze {
                     error();
                 }
                 getSym();
+                getBlock().append(CompileUtil.TAB).append("ret void\n");
             }
             return 1;
         }
@@ -510,7 +511,7 @@ public class GrammarAnalyze {
             }
 //            if(token!=Tokens.RBrace){
 //            }
-            if(i1!=1&&i2!=1) {
+            if(i1!=1||i2!=1) {
                 block_idx++;
                 codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
             }
@@ -548,11 +549,12 @@ public class GrammarAnalyze {
                             append(", label %x").append(l1).append(", label %x").append(r1).append("\n");
                 }
             }
-            if(i1!=1&&i2!=1) {
+            if(i1!=1) {
                 codeBlocks.get(l2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
-                if (r2 != -1) {
-                    codeBlocks.get(r2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
-                }
+
+            }
+            if(i2!=1&&r2!=-1){
+                codeBlocks.get(r2).getResult().append(CompileUtil.TAB).append("br label %x").append(block_idx).append("\n");
             }
         }
         else if(token==Tokens.WHILE){
