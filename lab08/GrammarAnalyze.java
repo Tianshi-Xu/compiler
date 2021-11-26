@@ -52,7 +52,6 @@ public class GrammarAnalyze {
         getSym();
         top_index.push(top_now+1);
         while (token==Tokens.CONST||token==Tokens.INT||token==Tokens.Void){
-//            out.println(token);
             if(token==Tokens.CONST){
                 ConstDecl(true);
             }
@@ -1220,6 +1219,7 @@ public class GrammarAnalyze {
         getSym();
         ArrayList<StackElement> params;
         StringBuilder paramString = new StringBuilder();
+//        out.println(func.getName());
         if(token!=Tokens.RPar){
             params = FuncRParams();
             if(params.size()!=func.getParams().size()){
@@ -1233,6 +1233,9 @@ public class GrammarAnalyze {
                 if(RElement.getType()==EleType.Var){
                     String x = getNumString(RElement);
                     paramString.append("i32 ").append(x);
+                }
+                else if(RElement.getType()==EleType.ConstVar){
+                    paramString.append("i32 ").append(RElement.getNum().getNumber());
                 }
                 else if(RElement.getType()==EleType.Array){
                     MyArray RArray = RElement.getArray();
@@ -1289,8 +1292,8 @@ public class GrammarAnalyze {
     public StackElement Exp(int type,Stack<StackElement> stackNum,Stack<Tokens> stackOp){
         int count=1,flag;
         boolean isRead=true;
-////        out.println("EXP-----------");
-////        out.println(token);
+//        out.println("EXP-----------");
+//        out.println(token);
         if(type==1){
             if(token==Tokens.LPar){
                 count=count+1;
