@@ -914,6 +914,7 @@ public class GrammarAnalyze {
 
     public void VarDef(){
         TokenTrap tmp1 = Ident();
+//        out.println(tmp1.getIdentName());
         int l,r,total=1;
         l=top_index.peek();
         r=top_now;
