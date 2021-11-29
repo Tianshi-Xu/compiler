@@ -1,69 +1,82 @@
-const int maxn = 4;
-const int mod = 1000000007;
-int dp[maxn][maxn][maxn][maxn][maxn][7];
-int list[200];
-
-int equal(int a, int b) {
-    if (a == b)
-        return 1;
-    return 0;
+int array[110];
+int n;
+void init(int n) {
+  int i = 1;
+  while (i <= n * n + 1) {
+    array[i] = -1;
+    i = i + 1;
+  }
 }
 
-int dfs(int a, int b, int c, int d, int e, int last){
-    if(dp[a][b][c][d][e][last] != -1)
-        return dp[a][b][c][d][e][last];
-    if(a + b + c + d + e == 0)
-        return 1;
-    int ans = 0;
-    if (a) ans = (ans + (a - equal(last, 2)) * dfs(a - 1, b, c, d, e, 1)) % mod;
-    if (b) ans = (ans + (b - equal(last, 3)) * dfs(a + 1, b - 1, c, d, e, 2)) % mod;
-    if (c) ans = (ans + (c - equal(last, 4)) * dfs(a, b + 1, c - 1, d, e, 3)) % mod;
-    if (d) ans = (ans + (d - equal(last, 5)) * dfs(a, b, c + 1, d - 1, e, 4)) % mod;
-    if (e) ans = (ans + e * dfs(a, b, c, d + 1, e - 1, 5)) % mod;
-    dp[a][b][c][d][e][last] = ans % mod;
-    return dp[a][b][c][d][e][last];
+int findfa(int a) {
+  if (array[a] == a)
+    return a;
+  else {
+    array[a] = findfa(array[a]);
+    return array[a];
+  }
 }
+void mmerge(int a, int b) {
+  int m = findfa(a);
+  int n = findfa(b);
+  if (m != n) array[m] = n;
+}
+int main() {
+  int t, m;
+  int a, b;
+  t = 1;
+  while (t) {
+    t = t - 1;
+    n = 4;
+    m = 10;
+    int i = 0;
+    int flag = 0;
+    init(n);
+    int k = n * n + 1;
 
-int cns[20];
- 
-int main(){
-    int n = getint();
-    int i = 0; 
-    while (i < maxn) {
-        int j = 0;
-        while(j < maxn) {
-            int k = 0;
-            while(k < maxn) {
-                int l = 0;
-                while (l < maxn) {
-                    int m = 0;
-                    while (m < maxn) {
-                        int h = 0;
-                        while (h < 7) {
-                            dp[i][j][k][l][m][h] = -1;
-                            h = h + 1;
-                        }
-                        m = m + 1;
-                    }
-                    l = l + 1;
-                }
-                k = k + 1;
-            }
-            j = j + 1;
+    while (i < m) {
+      a = getint();
+      b = getint();
+
+      if (!flag) {
+        int loc = n * (a - 1) + b;
+
+        array[loc] = loc;
+        if (a == 1) {
+          array[0] = 0;
+          mmerge(loc, 0);
         }
-        i = i + 1;
+        if (a == n) {
+          array[k] = k;
+          mmerge(loc, k);
+        }
+        if (b < n && array[loc + 1] != -1) {
+          mmerge(loc, loc + 1);
+        }
+        if (b > 1 && array[loc - 1] != -1) {
+          mmerge(loc, loc - 1);
+        }
+        if (a < n && array[loc + n] != -1) {
+          mmerge(loc, loc + n);
+        }
+        if (a > 1 && array[loc - n] != -1) {
+          mmerge(loc, loc - n);
+        }
+
+        if (array[0] != -1 && array[k] != -1 && findfa(0) == findfa(k)) {
+          flag = 1;
+          int tmp = i + 1;
+          putint(tmp);
+          putch(10);
+        }
+      }
+
+      i = i + 1;
     }
-    
-    i = 0;
-    while (i < n) {
-        list[i] = getint();
-        cns[list[i]] = cns[list[i]] + 1;
-        i = i + 1;
+    if (!flag) {
+      putint(-1);
+      putch(10);
     }
-
-    int ans = dfs(cns[1], cns[2], cns[3], cns[4], cns[5], 0);
-
-    putint(ans);
-
-    return 0;
+  }
+  return 0;
 }

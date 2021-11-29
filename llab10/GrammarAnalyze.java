@@ -283,12 +283,16 @@ public class GrammarAnalyze {
         StackElement tmp1 = LAndExp();
         while (token==Tokens.OR){
             getSym();
+            String x1 = getNumString1(tmp1,block_idx);
+            //#表示if为true语句的位置
+            getBlock().append(CompileUtil.TAB).append("br i1 ").append(x1).
+                    append(", label %x#").append(", label %x#").append(block_idx+1).append("\n");
+            block_idx++;
+            codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
 ////////            out.println(token);
             StackElement tmp2 = LAndExp();
 ////////            out.println("OK");
-            String x1 = getNumString1(tmp1,block_idx);
             String x2 = getNumString1(tmp2,block_idx);
-            getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = or i1 ").append(x1).append(",").append(x2).append("\n");
             Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register,block_idx);
             tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
@@ -298,12 +302,17 @@ public class GrammarAnalyze {
     }
     public StackElement LAndExp(){
         StackElement tmp1 = EqExp();
+        //br i1 %res_b label block_c, label %block_out
         while (token==Tokens.AND){
             getSym();
-            StackElement tmp2 = EqExp();
             String x1 = getNumString1(tmp1,block_idx);
+            //`表示else后语句位置
+            getBlock().append(CompileUtil.TAB).append("br i1 ").append(x1).
+                    append(", label %x").append(block_idx+1).append(", label %x`").append("\n");
+            block_idx++;
+            codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
+            StackElement tmp2 = EqExp();
             String x2 = getNumString1(tmp2,block_idx);
-            getBlock().append(CompileUtil.TAB).append("%u").append(register).append(" = and i1 ").append(x1).append(",").append(x2).append("\n");
             Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register,block_idx);
             tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
@@ -489,11 +498,18 @@ public class GrammarAnalyze {
                 error();
             }
             getSym();
+            int tmp_l = block_idx;
             StackElement cond = Cond();
             if(token!=Tokens.RPar){
                 error();
             }
             getSym();
+            int tmp_r = block_idx;
+            for(int k=tmp_l;k<=tmp_r;k++){
+                String tmps = codeBlocks.get(k).getResult().toString();
+                tmps = tmps.replace("#",""+(block_idx+1));
+                codeBlocks.get(k).setResult(new StringBuffer(tmps));
+            }
             int l1,l2,r1=-1,r2=-1,i1=0,i2=0;
             block_idx++;
             l1 = block_idx;
@@ -517,6 +533,11 @@ public class GrammarAnalyze {
             }
             if(r1==-1){
                 r1 = block_idx;
+            }
+            for(int k=tmp_l;k<=tmp_r;k++){
+                String tmps = codeBlocks.get(k).getResult().toString();
+                tmps = tmps.replace("`",""+(r1));
+                codeBlocks.get(k).setResult(new StringBuffer(tmps));
             }
             if(cond.getType()==EleType.ConstVar){
                 if (cond.getNum().getType().equals("i32")){
