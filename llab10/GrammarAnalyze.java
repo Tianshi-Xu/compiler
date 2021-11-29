@@ -287,7 +287,7 @@ public class GrammarAnalyze {
             String x1 = getNumString1(tmp2,block_idx);
             //#表示if为true语句的位置
             getBlock().append(CompileUtil.TAB).append("br i1 ").append(x1).
-                    append(", label %x#").append(", label %x#").append(block_idx+1).append("\n");
+                    append(", label %x#").append(", label %x").append(block_idx+1).append("\n");
             block_idx++;
             codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
 ////////            out.println(token);

@@ -21,7 +21,7 @@ define dso_local i32 @main() {
 x1:
     %u3 = call i32 @g()
     %u4 = icmp ne i32  %u3, 0
-    br i1  %u4, label %x4, label %x42
+    br i1  %u4, label %x4, label %x2
 
 x2:
     %u5 = call i32 @f()
