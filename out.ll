@@ -196,7 +196,7 @@ x17:
     %u102 = getelementptr [110 x i32],[110 x i32]*  @array, i32 0, i32  %u101
     %u103 = load i32, i32* %u102
     %u104 = icmp ne i32  %u103,-1
-    br i1 %u105, label %x18, label %x19
+    br i1 %u104, label %x18, label %x19
 
 x18:
     %u106 = load i32, i32* %u76
@@ -215,7 +215,7 @@ x20:
     %u112 = getelementptr [110 x i32],[110 x i32]*  @array, i32 0, i32  %u111
     %u113 = load i32, i32* %u112
     %u114 = icmp ne i32  %u113,-1
-    br i1 %u115, label %x21, label %x22
+    br i1 %u114, label %x21, label %x22
 
 x21:
     %u116 = load i32, i32* %u76
@@ -236,7 +236,7 @@ x23:
     %u124 = getelementptr [110 x i32],[110 x i32]*  @array, i32 0, i32  %u123
     %u125 = load i32, i32* %u124
     %u126 = icmp ne i32  %u125,-1
-    br i1 %u127, label %x24, label %x25
+    br i1 %u126, label %x24, label %x25
 
 x24:
     %u128 = load i32, i32* @n
@@ -257,7 +257,7 @@ x26:
     %u136 = getelementptr [110 x i32],[110 x i32]*  @array, i32 0, i32  %u135
     %u137 = load i32, i32* %u136
     %u138 = icmp ne i32  %u137,-1
-    br i1 %u139, label %x27, label %x28
+    br i1 %u138, label %x27, label %x28
 
 x27:
     %u140 = load i32, i32* @n
@@ -277,14 +277,14 @@ x29:
     %u147 = getelementptr [110 x i32],[110 x i32]*  @array, i32 0, i32  %u146
     %u148 = load i32, i32* %u147
     %u149 = icmp ne i32  %u148,-1
-    br i1  %u150, label %x30, label %x32
+    br i1  %u149, label %x30, label %x32
 
 x30:
     %u151 = call i32 @findfa(i32 0)
     %u152 = load i32, i32* %u63
     %u153 = call i32 @findfa(i32  %u152)
     %u154 = icmp eq i32  %u151, %u153
-    br i1 %u155, label %x31, label %x32
+    br i1 %u154, label %x31, label %x32
 
 x31:
     store i32  1, i32* %u60

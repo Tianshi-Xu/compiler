@@ -281,41 +281,43 @@ public class GrammarAnalyze {
     }
     public StackElement LOrExp(){
         StackElement tmp1 = LAndExp();
+        StackElement tmp2=tmp1;
         while (token==Tokens.OR){
             getSym();
-            String x1 = getNumString1(tmp1,block_idx);
+            String x1 = getNumString1(tmp2,block_idx);
             //#表示if为true语句的位置
             getBlock().append(CompileUtil.TAB).append("br i1 ").append(x1).
                     append(", label %x#").append(", label %x#").append(block_idx+1).append("\n");
             block_idx++;
             codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
 ////////            out.println(token);
-            StackElement tmp2 = LAndExp();
+            tmp2 = LAndExp();
 ////////            out.println("OK");
             String x2 = getNumString1(tmp2,block_idx);
             Var tmp_var = new Var("i1",false);
-            tmp_var.setLoad_register(register,block_idx);
-            tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
+            tmp_var.setLoad_register(register-1,block_idx);
+            tmp1 = new StackElement(EleType.Var,tmp_var,""+(register-1));
             register++;
         }
         return tmp1;
     }
     public StackElement LAndExp(){
         StackElement tmp1 = EqExp();
+        StackElement tmp2 = tmp1;
         //br i1 %res_b label block_c, label %block_out
         while (token==Tokens.AND){
             getSym();
-            String x1 = getNumString1(tmp1,block_idx);
+            String x1 = getNumString1(tmp2,block_idx);
             //`表示else后语句位置
             getBlock().append(CompileUtil.TAB).append("br i1 ").append(x1).
                     append(", label %x").append(block_idx+1).append(", label %x`").append("\n");
             block_idx++;
             codeBlocks.add(new CodeBlock("x"+block_idx,new StringBuffer()));
-            StackElement tmp2 = EqExp();
+            tmp2 = EqExp();
             String x2 = getNumString1(tmp2,block_idx);
             Var tmp_var = new Var("i1",false);
-            tmp_var.setLoad_register(register,block_idx);
-            tmp1 = new StackElement(EleType.Var,tmp_var,""+register);
+            tmp_var.setLoad_register(register-1,block_idx);
+            tmp1 = new StackElement(EleType.Var,tmp_var,""+(register-1));
             register++;
         }
         return tmp1;
