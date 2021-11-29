@@ -286,11 +286,6 @@ public class GrammarAnalyze {
         StackElement tmp2=tmp1;
         int tmp_r=block_idx;
 //        out.println(tmp_r);
-        for(int k=tmp_l;k<=tmp_r;k++){
-            String tmps = codeBlocks.get(k).getResult().toString();
-            tmps = tmps.replace("`",""+(block_idx+1));
-            codeBlocks.get(k).setResult(new StringBuffer(tmps));
-        }
         while (token==Tokens.OR){
             getSym();
             String x1 = getNumString1(tmp2,block_idx);
@@ -549,6 +544,11 @@ public class GrammarAnalyze {
             }
             if(r1==-1){
                 r1 = block_idx;
+            }
+            for(int k=tmp_l;k<=tmp_r;k++){
+                String tmps = codeBlocks.get(k).getResult().toString();
+                tmps = tmps.replace("`",""+r1);
+                codeBlocks.get(k).setResult(new StringBuffer(tmps));
             }
             if(cond.getType()==EleType.ConstVar){
                 if (cond.getNum().getType().equals("i32")){
