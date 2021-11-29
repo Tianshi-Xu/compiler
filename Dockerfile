@@ -1,6 +1,6 @@
 FROM openjdk:8
 WORKDIR /app/
-COPY llab09/* ./
+COPY llab10/* ./
 RUN javac GrammarAnalyze.java
 
  
