@@ -286,6 +286,13 @@ public class GrammarAnalyze {
         StackElement tmp2=tmp1;
         int tmp_r=block_idx;
 //        out.println(tmp_r);
+        if(token==Tokens.OR){
+            for(int k=tmp_l;k<=tmp_r;k++){
+                String tmps = codeBlocks.get(k).getResult().toString();
+                tmps = tmps.replace("`",""+(block_idx+1));
+                codeBlocks.get(k).setResult(new StringBuffer(tmps));
+            }
+        }
         while (token==Tokens.OR){
             getSym();
             String x1 = getNumString1(tmp2,block_idx);
