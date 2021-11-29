@@ -297,7 +297,6 @@ public class GrammarAnalyze {
             Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register-1,block_idx);
             tmp1 = new StackElement(EleType.Var,tmp_var,""+(register-1));
-            register++;
         }
         return tmp1;
     }
@@ -318,7 +317,6 @@ public class GrammarAnalyze {
             Var tmp_var = new Var("i1",false);
             tmp_var.setLoad_register(register-1,block_idx);
             tmp1 = new StackElement(EleType.Var,tmp_var,""+(register-1));
-            register++;
         }
         return tmp1;
     }
