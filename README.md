@@ -1,2 +1,2 @@
 # compiler
-the most powerful compiler
+a compiler based on java
